@@ -77,4 +77,25 @@ router.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user.toPublic() });
 });
 
+// UPI IDs look like "name@bank" (NPCI handle rules: letters, digits, . - _ before the @).
+export const UPI_ID = /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9.-]{1,63}$/;
+
+const profileSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Name is required').max(50, 'Name is too long').optional(),
+    upiId: z
+      .string()
+      .trim()
+      .max(100)
+      .refine((v) => v === '' || UPI_ID.test(v), 'Enter a UPI ID like name@okaxis, or leave it empty')
+      .optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+router.patch('/me', requireAuth, validate({ body: profileSchema }), async (req, res) => {
+  Object.assign(req.user, req.valid.body);
+  await req.user.save();
+  res.json({ user: req.user.toPublic() });
+});
+
 export default router;

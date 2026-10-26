@@ -6,11 +6,12 @@ import { Group, generateInviteCode } from '../models/Group.js';
 import { User } from '../models/User.js';
 import { logActivity } from '../services/activity.js';
 import { groupBalances, userNetByGroup, userNetInGroup } from '../services/balances.js';
-import { nameMap } from '../services/expenses.js';
+import { amountField, calendarDateField, nameMap } from '../services/expenses.js';
+import { Expense } from '../models/Expense.js';
 import { Activity } from '../models/Activity.js';
 import { RecurringExpense } from '../models/RecurringExpense.js';
 import { processDueRecurring } from '../services/recurring.js';
-import { conflict, forbidden, notFound } from '../utils/errors.js';
+import { AppError, conflict, forbidden, notFound } from '../utils/errors.js';
 import { formatINR } from '../shared/split.js';
 
 const router = Router();
@@ -28,6 +29,19 @@ const groupPatch = z
   })
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 
+const ymd = (d) => (d ? d.toISOString().slice(0, 10) : null);
+
+function serializeTrip(trip) {
+  return {
+    destination: trip?.destination?.name
+      ? { name: trip.destination.name, lat: trip.destination.lat, lng: trip.destination.lng }
+      : null,
+    startDate: ymd(trip?.startDate),
+    endDate: ymd(trip?.endDate),
+    budget: trip?.budget ?? 0,
+  };
+}
+
 /** Group as seen by a member: members with names, plus the caller's role. */
 async function serializeGroup(group, userId) {
   const users = await User.find({ _id: { $in: group.members.map((m) => m.user) } }).lean();
@@ -38,6 +52,7 @@ async function serializeGroup(group, userId) {
     name: group.name,
     description: group.description,
     simplifyDebts: group.simplifyDebts,
+    trip: serializeTrip(group.trip),
     createdAt: group.createdAt,
     myRole: me?.role,
     // Only admins see the invite code; it is the key to the group.
@@ -48,6 +63,7 @@ async function serializeGroup(group, userId) {
         id: String(m.user),
         name: u?.name ?? 'Unknown user',
         email: u?.email ?? '',
+        upiId: u?.upiId ?? '',
         role: m.role,
         joinedAt: m.joinedAt,
       };
@@ -155,6 +171,85 @@ router.get(
     });
   },
 );
+
+const tripSchema = z
+  .object({
+    destination: z
+      .object({
+        name: z.string().trim().min(1).max(120),
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+      })
+      .nullable()
+      .optional(),
+    startDate: calendarDateField.nullable().optional(),
+    endDate: calendarDateField.nullable().optional(),
+    budget: z.union([amountField, z.literal(''), z.null()]).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+// Trip details are shared planning data: any member can edit them.
+router.put('/:groupId/trip', loadGroupMember, validate({ body: tripSchema }), async (req, res) => {
+  const body = req.valid.body;
+  const trip = req.group.trip ?? {};
+  const next = {
+    destination: body.destination !== undefined ? body.destination : (trip.destination ?? null),
+    startDate: body.startDate !== undefined ? body.startDate : (trip.startDate ?? null),
+    endDate: body.endDate !== undefined ? body.endDate : (trip.endDate ?? null),
+    budget: body.budget !== undefined ? body.budget || 0 : (trip.budget ?? 0),
+  };
+  if (Boolean(next.startDate) !== Boolean(next.endDate)) {
+    throw new AppError(400, 'BAD_DATE', 'Set both the start and end date of the trip');
+  }
+  if (next.startDate && next.endDate) {
+    if (next.endDate < next.startDate) throw new AppError(400, 'BAD_DATE', 'The trip must end after it starts');
+    const days = (next.endDate - next.startDate) / 86400000 + 1;
+    if (days > 60) throw new AppError(400, 'BAD_DATE', 'A trip can be at most 60 days long');
+  }
+  req.group.trip = next;
+  await req.group.save();
+  await logActivity(req.group, req.user, 'trip.updated', {
+    destination: next.destination?.name ?? null,
+    startDate: ymd(next.startDate),
+    endDate: ymd(next.endDate),
+    budget: next.budget,
+  });
+  res.json({ group: await serializeGroup(req.group, req.user._id) });
+});
+
+/** Where the money went: totals by category and by payer, against the trip budget. */
+router.get('/:groupId/summary', loadGroupMember, async (req, res) => {
+  const match = { group: req.group._id, deletedAt: null };
+  const [byCategory, byPayer, mine] = await Promise.all([
+    Expense.aggregate([
+      { $match: match },
+      { $group: { _id: '$category', amount: { $sum: '$amount' }, count: { $sum: 1 } } },
+    ]),
+    Expense.aggregate([{ $match: match }, { $group: { _id: '$paidBy', amount: { $sum: '$amount' } } }]),
+    Expense.aggregate([
+      { $match: match },
+      { $unwind: '$splits' },
+      { $match: { 'splits.user': req.user._id } },
+      { $group: { _id: null, amount: { $sum: '$splits.amount' } } },
+    ]),
+  ]);
+  const names = await nameMap(byPayer.map((p) => p._id));
+  const total = byCategory.reduce((a, c) => a + c.amount, 0);
+  res.json({
+    total,
+    myShare: mine[0]?.amount ?? 0,
+    budget: req.group.trip?.budget ?? 0,
+    byCategory: byCategory
+      .map((c) => ({ category: c._id, amount: c.amount, count: c.count }))
+      .sort((a, b) => b.amount - a.amount),
+    byPayer: byPayer
+      .map((p) => ({
+        user: { id: String(p._id), name: names.get(String(p._id)) ?? 'Former member' },
+        amount: p.amount,
+      }))
+      .sort((a, b) => b.amount - a.amount),
+  });
+});
 
 router.post('/:groupId/invite/regenerate', loadGroupMember, requireGroupAdmin, async (req, res) => {
   req.group.inviteCode = generateInviteCode();

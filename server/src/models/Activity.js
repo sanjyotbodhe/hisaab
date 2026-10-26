@@ -18,6 +18,13 @@ export const ACTIVITY_TYPES = [
   'recurring.resumed',
   'recurring.deleted',
   'recurring.auto_paused',
+  'trip.updated',
+  'plan.added',
+  'plan.scheduled',
+  'plan.removed',
+  'booking.added',
+  'booking.removed',
+  'booking.expensed',
 ];
 
 /** Append-only audit log of everything that happens in a group. */
