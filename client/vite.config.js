@@ -9,11 +9,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // fonts and API. Added at build time only, because the dev server injects inline scripts.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' https://checkout.razorpay.com",
+  'frame-src https://api.razorpay.com https://checkout.razorpay.com',
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
-  "img-src 'self' data: https://tile.openstreetmap.org https://upload.wikimedia.org",
-  "connect-src 'self'",
+  "img-src 'self' data: https://tile.openstreetmap.org https://upload.wikimedia.org https://*.razorpay.com",
+  "connect-src 'self' https://*.razorpay.com",
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",

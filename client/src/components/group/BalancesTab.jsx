@@ -4,6 +4,7 @@ import { formatDate, formatINR } from '../../lib/format.js';
 import { useToast } from '../../lib/toast.jsx';
 import { useResource } from '../../lib/useResource.js';
 import { Icon } from '../icons.jsx';
+import RazorpayPay from '../RazorpayPay.jsx';
 import UpiPay from '../UpiPay.jsx';
 import { Avatar, Empty, ErrorState, Loading, confirmAction } from '../ui.jsx';
 
@@ -18,6 +19,8 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
     [group.id, version, group.simplifyDebts],
   );
   const [toggling, setToggling] = useState(false);
+  const payments = useResource(() => api(`/groups/${group.id}/payments/config`), [group.id]);
+  const onlineEnabled = payments.data?.enabled === true;
 
   if (data.loading && !data.data) return <Loading text="Working out balances…" />;
   if (data.error && !data.data) return <ErrorState error={data.error} onRetry={data.reload} />;
@@ -92,6 +95,9 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
                     </span>
                   </span>
                   <span className="transfer-actions">
+                    {d.from.id === me.id && onlineEnabled && (
+                      <RazorpayPay group={group} to={d.to} amount={d.amount} onPaid={onChanged} />
+                    )}
                     {d.from.id === me.id && upiOf(d.to.id) && (
                       <UpiPay
                         payee={{ name: d.to.name, upiId: upiOf(d.to.id) }}
@@ -181,7 +187,12 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
                   </span>
                 </span>
                 <span className="hand pos">{formatINR(s.amount)}</span>
-                {(isAdmin || s.createdBy.id === me.id) && (
+                {s.method === 'razorpay' && (
+                  <span className="tag tag-pos" title="Verified by Razorpay">
+                    <Icon name="check" size={11} /> online
+                  </span>
+                )}
+                {s.method !== 'razorpay' && (isAdmin || s.createdBy.id === me.id) && (
                   <button
                     type="button"
                     className="icon-btn"

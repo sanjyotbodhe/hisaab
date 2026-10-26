@@ -62,6 +62,8 @@ function describe(a, meId) {
       return `${who} removed the booking “${m.title}”`;
     case 'booking.expensed':
       return `${who} added the booking “${m.title}” as an expense (${amt(m.amount)})`;
+    case 'payment.received':
+      return `${m.from} paid ${m.to} ${amt(m.amount)} online (verified by Razorpay)`;
     case 'recurring.auto_paused':
       return `“${m.description}” was paused automatically: ${m.reason}`;
     default:
