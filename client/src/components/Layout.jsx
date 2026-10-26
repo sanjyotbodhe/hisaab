@@ -5,6 +5,7 @@ import { formatINR } from '../lib/format.js';
 import { GroupsProvider, useGroups } from '../lib/groups.jsx';
 import { useToast } from '../lib/toast.jsx';
 import CreateGroupForm from './CreateGroupForm.jsx';
+import ProfileForm from './ProfileForm.jsx';
 import { Icon } from './icons.jsx';
 import { Avatar, Modal } from './ui.jsx';
 
@@ -19,7 +20,7 @@ function Brand() {
   );
 }
 
-function Sidebar({ onNewGroup }) {
+function Sidebar({ onNewGroup, onProfile }) {
   const { user, logout } = useAuth();
   const groups = useGroups();
   const list = groups.data?.groups ?? [];
@@ -63,11 +64,13 @@ function Sidebar({ onNewGroup }) {
       </div>
 
       <div className="side-user">
-        <Avatar name={user.name} size="sm" />
-        <span className="side-user-text">
-          <span className="side-user-name">{user.name}</span>
-          <span className="side-user-email">{user.email}</span>
-        </span>
+        <button type="button" className="side-profile" onClick={onProfile} title="Profile and UPI ID">
+          <Avatar name={user.name} size="sm" />
+          <span className="side-user-text">
+            <span className="side-user-name">{user.name}</span>
+            <span className="side-user-email">{user.upiId ? `UPI: ${user.upiId}` : 'Add your UPI ID'}</span>
+          </span>
+        </button>
         <button type="button" className="side-logout" onClick={logout} aria-label="Log out" title="Log out">
           <Icon name="logout" size={17} />
         </button>
@@ -82,20 +85,39 @@ function Shell({ children }) {
   const navigate = useNavigate();
   const toast = useToast();
   const [creating, setCreating] = useState(false);
+  const [profile, setProfile] = useState(false);
 
   return (
     <div className="app">
-      <Sidebar onNewGroup={() => setCreating(true)} />
+      <Sidebar onNewGroup={() => setCreating(true)} onProfile={() => setProfile(true)} />
       <header className="mobilebar">
         <Brand />
         <div className="mobilebar-user">
-          <Avatar name={user.name} size="sm" />
+          <button
+            type="button"
+            className="mobile-profile"
+            onClick={() => setProfile(true)}
+            aria-label="Profile and UPI ID"
+          >
+            <Avatar name={user.name} size="sm" />
+          </button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
             Log out
           </button>
         </div>
       </header>
       <main className="main">{children}</main>
+
+      <Modal open={profile} onClose={() => setProfile(false)} title="Your profile">
+        <ProfileForm
+          onCancel={() => setProfile(false)}
+          onSaved={() => {
+            setProfile(false);
+            groups.reload();
+            toast.success('Profile saved');
+          }}
+        />
+      </Modal>
 
       <Modal open={creating} onClose={() => setCreating(false)} title="New group">
         <CreateGroupForm

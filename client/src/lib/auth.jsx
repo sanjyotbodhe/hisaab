@@ -40,6 +40,7 @@ export function AuthProvider({ children }) {
       slow,
       bootError,
       retry: check,
+      updateUser: (u) => setUser(u),
       login: async (email, password) => {
         const { user: u } = await api('/auth/login', { method: 'POST', body: { email, password } });
         setUser(u);

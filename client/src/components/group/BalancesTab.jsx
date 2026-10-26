@@ -4,6 +4,7 @@ import { formatDate, formatINR } from '../../lib/format.js';
 import { useToast } from '../../lib/toast.jsx';
 import { useResource } from '../../lib/useResource.js';
 import { Icon } from '../icons.jsx';
+import UpiPay from '../UpiPay.jsx';
 import { Avatar, Empty, ErrorState, Loading, confirmAction } from '../ui.jsx';
 
 export default function BalancesTab({ group, me, version, onChanged, onSettle }) {
@@ -51,6 +52,7 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
   }
 
   const canRecord = (d) => isAdmin || d.from.id === me.id || d.to.id === me.id;
+  const upiOf = (id) => group.members.find((m) => m.id === id)?.upiId;
 
   return (
     <div className="balances">
@@ -89,15 +91,27 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
                       <span>{you(d.to)}</span>
                     </span>
                   </span>
-                  {canRecord(d) && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => onSettle({ from: d.from.id, to: d.to.id, amount: d.amount })}
-                    >
-                      Record payment
-                    </button>
-                  )}
+                  <span className="transfer-actions">
+                    {d.from.id === me.id && upiOf(d.to.id) && (
+                      <UpiPay
+                        payee={{ name: d.to.name, upiId: upiOf(d.to.id) }}
+                        amount={d.amount}
+                        note={`Hisaab ${group.name}`}
+                      />
+                    )}
+                    {d.from.id === me.id && !upiOf(d.to.id) && (
+                      <span className="muted small upi-hint">{d.to.name} hasn’t added a UPI ID</span>
+                    )}
+                    {canRecord(d) && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => onSettle({ from: d.from.id, to: d.to.id, amount: d.amount })}
+                      >
+                        Record payment
+                      </button>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
