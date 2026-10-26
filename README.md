@@ -1,6 +1,6 @@
 # Hisaab
 
-**One place for a group's shared money and trips: split expenses, plan the trip together, keep bookings, and settle up with the fewest payments (pay by UPI in one tap).**
+**One place for a group's shared money and trips: split expenses, plan the trip together, keep bookings, and settle up with the fewest payments (pay by UPI, or online through Razorpay with verified settlement).**
 
 Live app: **https://YOUR-APP.vercel.app**
 Demo video: **YOUR-VIDEO-LINK**
@@ -10,15 +10,17 @@ Repository: https://github.com/sanjyotbodhe/hisaab
 
 ## Screenshots
 
-| Overview                                             | Trip plan: itinerary, group votes, map, famous places |
-| ---------------------------------------------------- | ----------------------------------------------------- |
-| ![Overview](docs/screenshots/dashboard.png)          | ![Trip plan](docs/screenshots/trip-plan.png)          |
-| **Balances and settle-up plan**                      | **Pay via UPI (QR on laptops, app link on phones)**   |
-| ![Balances](docs/screenshots/balances.png)           | ![UPI](docs/screenshots/upi.png)                      |
-| **Bookings vault**                                   | **Expenses with search and filters**                  |
-| ![Bookings](docs/screenshots/bookings.png)           | ![Expenses](docs/screenshots/expenses.png)            |
-| **Edit conflict detected**                           | **Mobile**                                            |
-| ![Edit conflict](docs/screenshots/edit-conflict.png) | ![Mobile](docs/screenshots/mobile.png)                |
+| Overview                                        | Trip plan: itinerary, group votes, map, famous places |
+| ----------------------------------------------- | ----------------------------------------------------- |
+| ![Overview](docs/screenshots/dashboard.png)     | ![Trip plan](docs/screenshots/trip-plan.png)          |
+| **Balances and settle-up plan**                 | **Pay via UPI (QR on laptops, app link on phones)**   |
+| ![Balances](docs/screenshots/balances.png)      | ![UPI](docs/screenshots/upi.png)                      |
+| **Bookings vault**                              | **Expenses with search and filters**                  |
+| ![Bookings](docs/screenshots/bookings.png)      | ![Expenses](docs/screenshots/expenses.png)            |
+| **Paid online through Razorpay (verified)**     | **Edit conflict detected**                            |
+| ![Paid online](docs/screenshots/pay-online.png) | ![Edit conflict](docs/screenshots/edit-conflict.png)  |
+| **Mobile**                                      |                                                       |
+| ![Mobile](docs/screenshots/mobile.png)          |                                                       |
 
 ## Problem statement
 
@@ -36,13 +38,13 @@ Trips make it worse. The plan is scattered across a WhatsApp poll, a Google Doc 
 
 Hisaab is a shared ledger for a group. Anyone in the group records what they paid and who it was for, split equally, by exact amounts, by percentages or by shares. Hisaab keeps an exact running balance for every member (in integer paise, so nothing is lost to rounding), and computes a **simplified settle-up plan**: the smallest practical set of payments that makes everyone even. When someone pays back, they record it and balances update immediately. Recurring costs like rent are added automatically every month.
 
-For trips, the same group gets a shared plan: destination, dates and budget; a day-by-day itinerary; an ideas list everyone votes on; a map of every stop plus famous places nearby; and a bookings vault where any booking becomes a split expense in one click. Paying back is one tap: the settle-up plan opens your UPI app with the exact amount.
+For trips, the same group gets a shared plan: destination, dates and budget; a day-by-day itinerary; an ideas list everyone votes on; a map of every stop plus famous places nearby; and a bookings vault where any booking becomes a split expense in one click. Paying back is one tap: the settle-up plan opens your UPI app with the exact amount, or takes the payment online through Razorpay, in which case the server verifies it and records it automatically.
 
 ## Key features (core workflows)
 
 1. **Groups and invites.** Create a group, share an invite link, members join with one click. Admin / member roles; admins manage members, reset the invite link and change settings.
 2. **Add an expense with any split.** Equal, exact amounts, percentages or shares, with a live preview of each person's share. Validation explains exactly what is wrong ("Percentages add up to 90%"). Double-clicks and retries never create duplicates. Search, filters, CSV export, edit-conflict detection and recurring expenses (rent, Wi-Fi) build on it.
-3. **Balances, settle up and pay by UPI.** Each member's net balance, a simplified list of who pays whom, and one-click "Record payment". If the person you owe has saved a UPI ID, **Pay via UPI** opens GPay / PhonePe / Paytm with the exact amount on a phone, or shows a QR code to scan on a laptop.
+3. **Balances, settle up and pay by UPI.** Each member's net balance, a simplified list of who pays whom, and one-click "Record payment". If the person you owe has saved a UPI ID, **Pay via UPI** opens GPay / PhonePe / Paytm with the exact amount on a phone, or shows a QR code to scan on a laptop. **Pay online** (Razorpay: UPI, cards, netbanking) charges the exact amount owed; once Razorpay's signature is verified on the server the payment is recorded automatically, marked _online_, and can't be deleted.
 4. **Plan the trip together.** Destination, dates and budget for the group. A day-by-day itinerary, an ideas list the group **votes** on before scheduling, and a **map** (OpenStreetMap) with numbered pins for the plan and the **famous places near the destination** (from Wikipedia, with photos), each addable in one tap. Every stop has a Google Maps directions link.
 5. **Bookings and budget.** Save flight / train / bus / stay / activity confirmations (PNR, times, cost, who paid) where the whole group can see them. **Add as expense** turns a booking into an equal split exactly once. "Find and book" links open Google Flights, Booking.com, IRCTC and redBus pre-filled with the trip's destination and dates. The budget tracker shows spent vs budget and a breakdown by category.
 
@@ -51,6 +53,7 @@ For trips, the same group gets a shared plan: destination, dates and budget; a d
 | Layer      | Choice                                                         | Why                                                                                              |
 | ---------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Frontend   | React 18, React Router 7, Vite 8, Leaflet, qrcode              | Component-based UI; Leaflet renders the OpenStreetMap map; UPI QR codes generated in the browser |
+| Payments   | Razorpay Orders API + Checkout, webhooks                       | Indian payment methods (UPI, cards, netbanking); HMAC-signed results verified on the server      |
 | Backend    | Node.js 22, Express 5                                          | Express 5 forwards async errors to one error handler                                             |
 | Database   | MongoDB (Atlas) with Mongoose                                  | Groups embed members; expenses embed their splits; aggregations compute balances in the database |
 | Auth       | JWT in an httpOnly, SameSite cookie; bcrypt                    | No token in JavaScript reach (XSS), cookie not sent cross-site (CSRF)                            |
@@ -71,14 +74,17 @@ flowchart LR
   subgraph Vercel project - one domain
     CL[client service<br/>Vite static build] -.serves.-> UI
     API[server service<br/>Express, index.js] --> MW[auth · CSRF · zod validation · group membership]
-    MW --> R[routes: auth, groups, invites, expenses, settlements,<br/>recurring, plan, bookings, places]
-    R --> S[services: balances, recurring catch-up, activity, places]
+    MW --> R[routes: auth, groups, invites, expenses, settlements,<br/>recurring, plan, bookings, places, payments]
+    R --> S[services: balances, recurring catch-up, activity, places, razorpay]
     S -.uses.-> SH
   end
   S --> DB[(MongoDB Atlas<br/>incl. shared lookup cache)]
   R --> DB
   S -->|search, throttled 1/s| OSM[OpenStreetMap Nominatim]
   S -->|nearby attractions| WIKI[Wikipedia API]
+  S -->|create order| RZP[Razorpay API]
+  UI -->|checkout| RZP
+  RZP -->|signed webhook| API
   UI -->|map tiles| TILES[tile.openstreetmap.org]
 ```
 
@@ -99,16 +105,17 @@ hisaab/
 │   │   ├── app.js          # Express app: security middleware, routes, static client (local)
 │   │   ├── server.js       # long-running mode (local): DB, scheduler, graceful shutdown
 │   │   ├── models/         # User, Group, Expense, Settlement, Activity, RecurringExpense,
-│   │   │                   # PlanItem, Booking, ExternalCache
+│   │   │                   # PlanItem, Booking, Payment, ExternalCache
 │   │   ├── routes/         # HTTP layer: validation + authorization + responses
-│   │   ├── services/       # balances (aggregations), recurring job, activity log, places (cache + throttle)
+│   │   ├── services/       # balances (aggregations), recurring job, activity log, places (cache + throttle),
+│   │   │                   # razorpay (orders, signature checks, exactly-once settlement)
 │   │   ├── middleware/     # auth, CSRF, validation, group membership, errors
 │   │   └── utils/          # errors, calendar dates
 │   └── tests/              # unit + API integration tests
 └── client/                 # "client" service (React + Vite)
     └── src/
         ├── pages/          # Auth, Dashboard, Group, Join
-        ├── components/     # ExpenseForm, SettleForm, TripMap, PlaceSearch, UpiPay, group tabs, UI kit
+        ├── components/     # ExpenseForm, SettleForm, TripMap, PlaceSearch, UpiPay, RazorpayPay, group tabs, UI kit
         └── lib/            # API client, auth context, toasts, formatting
 ```
 
@@ -119,7 +126,8 @@ hisaab/
 | `users`             | name, email (unique), passwordHash, upiId                                                                                                     | hash never returned; UPI ID only shown to fellow group members                   |
 | `groups`            | name, members[{user, role, joinedAt}], inviteCode (unique), simplifyDebts, trip{destination, startDate, endDate, budget}                      | members and trip embedded: always read together                                  |
 | `expenses`          | group, amount (paise), paidBy, splitType, splits[{user, amount, value}], category, date, deletedAt, clientRequestId, recurring, occurrenceKey | soft delete; unique partial indexes for idempotency and recurring de-duplication |
-| `settlements`       | group, from, to, amount, date, deletedAt, clientRequestId                                                                                     | real-world payments                                                              |
+| `settlements`       | group, from, to, amount, date, deletedAt, clientRequestId, method (manual / razorpay), providerRef                                            | real-world payments; verified online ones can't be deleted                       |
+| `payments`          | group, from, to, amount, orderId (unique), paymentId (unique), status (created / paid), paidVia, settlement                                   | one Razorpay order; status flips once, by compare-and-set                        |
 | `activities`        | group, actor, type, meta, createdAt                                                                                                           | append-only audit log                                                            |
 | `recurringexpenses` | group, amount, paidBy, participants, frequency, anchorDay, nextRunAt, active                                                                  | drives the scheduler                                                             |
 | `planitems`         | group, title, kind, day (null = idea), time, place{name, lat, lng, thumbnail, url}, notes, votes[user]                                        | votes updated atomically                                                         |
@@ -143,6 +151,7 @@ hisaab/
 - **A booking becomes an expense exactly once.** The booking is claimed with a conditional update (`expense: null → newId`) before the expense is written; double-clicks get `409 ALREADY_EXPENSED`, a failed write releases the claim, and if that expense is later deleted the booking can be added again.
 - **Responsible use of free third-party services.** Place search and attractions go through the server, never straight from the browser: results are cached in MongoDB (shared across serverless instances, TTL-expired) with an in-memory layer in front, calls to Nominatim are serialised to at most one per second, every request identifies the app with a User-Agent and times out after 7 s, users are rate-limited, and provider failures come back as a clear `502` instead of a crash.
 - **Pay via UPI uses the standard `upi://pay` deep link** (payee, name, exact amount, note). Nothing is charged by Hisaab; after paying, the user records the payment so balances stay the source of truth.
+- **Online payments are recorded exactly once, and only when proven.** The server creates the Razorpay order: it decides the amount (capped at what the payer actually owes) and remembers who pays whom, so the browser can't change either. A payment counts only after the server checks Razorpay's HMAC-SHA256 signature (`order_id|payment_id` with the key secret; the raw request body with the webhook secret for webhooks, compared in constant time). The checkout callback and the webhook can both arrive, in any order and more than once: the `payments` row flips `created → paid` with a compare-and-set, and the settlement uses `razorpay:<payment id>` as its idempotency key, so exactly one settlement is created. If the browser closes before the callback, the webhook still records it. The key secret never leaves the server, and provider error text is never passed on to the client.
 - **No fake booking.** Real booking needs partner APIs with payments; instead the app links out to booking sites with the trip's destination and dates pre-filled, and keeps the resulting confirmations.
 - **Calendar dates, not timestamps.** Expense dates are stored as UTC midnight of the chosen date and "today" is evaluated in IST, so an expense never jumps a day between time zones.
 
@@ -150,7 +159,8 @@ hisaab/
 
 - Passwords hashed with bcrypt (cost 12); login responses are identical for unknown email and wrong password, with a dummy hash to equalise timing.
 - JWT in an `httpOnly`, `SameSite=Lax`, `Secure` (in production) cookie; plus a required `X-Requested-With` header on every state-changing request.
-- Rate limiting on login/register; strict Content-Security-Policy: Helmet sets it (plus other security headers) on every API response, and the production build of the React page carries the same policy in a `<meta>` tag. Fonts are self-hosted; the only third-party content the page loads is OpenStreetMap map tiles and Wikimedia thumbnails, both allow-listed in the CSP.
+- Rate limiting on login/register; strict Content-Security-Policy: Helmet sets it (plus other security headers) on every API response, and the production build of the React page carries the same policy in a `<meta>` tag. Fonts are self-hosted; the only third-party content the page loads is OpenStreetMap map tiles, Wikimedia thumbnails and Razorpay Checkout (script and frame), all allow-listed in the CSP.
+- Razorpay results are trusted only after server-side signature verification; the webhook endpoint rejects unsigned or tampered bodies with `400` and is disabled (`404`) unless a webhook secret is configured.
 - Every route checks group membership; non-members get 404 so group ids can't be probed. Edits/deletes are limited to the creator, payer or an admin. Only admins see the invite code.
 - All input validated with Zod; search text is regex-escaped; CSV export neutralises spreadsheet formula injection.
 - Secrets only in environment variables; `.env` is git-ignored.
@@ -167,6 +177,10 @@ hisaab/
 | Slow cold start / network down   | "Still connecting…" message, network errors with Retry buttons                     |
 | Database unreachable             | `503 DB_UNAVAILABLE`; `/api/health` reports `degraded`                             |
 | Invalid / reset invite link      | Clear message on the join page                                                     |
+| Online payment cancelled / fails | Nothing recorded; toast explains, balance unchanged                                |
+| Tampered payment signature       | `400 BAD_SIGNATURE`, nothing recorded                                              |
+| Paying more than you owe         | `400 AMOUNT_TOO_LARGE` before an order is created                                  |
+| Razorpay unreachable             | `502 PAYMENT_PROVIDER_DOWN`; UPI and manual recording still work                   |
 
 ## Local setup
 
@@ -198,7 +212,7 @@ npm start            # set NODE_ENV=production in server/.env for secure cookies
 **Tests** (a throwaway in-memory MongoDB is downloaded and started automatically):
 
 ```bash
-npm test             # 45 unit + API integration tests
+npm test             # 50 unit + API integration tests
 npm run format:check # Prettier
 ```
 
@@ -213,6 +227,9 @@ Set in `server/.env` locally, or in Vercel → Project → Settings → Environm
 | `MONGODB_URI`                | yes      | MongoDB connection string, e.g. `mongodb+srv://user:pass@cluster.mongodb.net/hisaab` |
 | `JWT_SECRET`                 | yes      | Long random string used to sign sessions (32+ characters in production)              |
 | `CRON_SECRET`                | no       | Enables `/api/cron/recurring` for an external scheduler (`Authorization: Bearer …`)  |
+| `RAZORPAY_KEY_ID`            | no       | Razorpay key id (`rzp_test_…` for test mode). With the secret, enables Pay online    |
+| `RAZORPAY_KEY_SECRET`        | no       | Razorpay key secret. Server-only; used to create orders and verify signatures        |
+| `RAZORPAY_WEBHOOK_SECRET`    | no       | Secret of the Razorpay webhook; enables `/api/payments/webhook`                      |
 | `NODE_ENV`                   | no       | `development` (default) or `production`. Always production on Vercel                 |
 | `PORT`                       | no       | Port for the local server (default `4000`)                                           |
 | `CLIENT_ORIGIN`              | no       | Dev-only CORS origin (default `http://localhost:5173`)                               |
@@ -238,8 +255,9 @@ Deployed on **Vercel** using **Vercel Services** with **MongoDB Atlas**. `vercel
 The browser calls the API on the same origin (`/api/...`), so there is no CORS and no service-to-service traffic (no bindings needed).
 
 1. **MongoDB Atlas:** create a free M0 cluster → Database Access: add a database user → Network Access: allow `0.0.0.0/0` (Vercel functions have no fixed IPs) → Connect → Drivers: copy the connection string, insert the password and add the database name: `...mongodb.net/hisaab?retryWrites=true&w=majority`.
-2. **Vercel:** Add New → Project → import `sanjyotbodhe/hisaab`. Vercel reads the services from `vercel.json`. Add the environment variables `MONGODB_URI` and `JWT_SECRET` (optionally `CRON_SECRET`), then Deploy.
+2. **Vercel:** Add New → Project → import `sanjyotbodhe/hisaab`. Vercel reads the services from `vercel.json`. Add the environment variables `MONGODB_URI` and `JWT_SECRET` (optionally `CRON_SECRET` and the Razorpay variables), then Deploy.
 3. Check `https://YOUR-APP.vercel.app/api/health` returns `{"status":"ok","db":"up"}`.
+4. **Razorpay (optional):** in the Razorpay Dashboard (Test mode) → Account & Settings → API Keys, generate a key and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` in Vercel. For the webhook: Account & Settings → Webhooks → Add: URL `https://YOUR-APP.vercel.app/api/payments/webhook`, events `payment.captured` and `order.paid`, a secret of your choice, which also goes into `RAZORPAY_WEBHOOK_SECRET`. Redeploy after changing variables. In test mode, use Razorpay's test UPI ID `success@razorpay` or test cards; no real money moves.
 
 Live URL: **https://YOUR-APP.vercel.app**
 
@@ -248,7 +266,9 @@ Live URL: **https://YOUR-APP.vercel.app**
 - Single currency (INR).
 - No email notifications; activity feed is in-app only.
 - Debt simplification is greedy (≤ n − 1 payments), not the NP-hard true minimum.
-- UPI payments open the user's own UPI app; Hisaab doesn't verify that a payment went through, so the payer records it (a payment-gateway webhook would automate this).
+- Pay via UPI (deep link / QR) can't be verified, so the payer records it; **Pay online** through Razorpay is verified and recorded automatically.
+- Razorpay pays into one merchant account (the app owner's). Sending the money straight to the friend's bank needs Razorpay Route (linked accounts with KYC), so the demo runs in test mode.
+- Refunds of online payments aren't handled in the app.
 - Flights and hotels are booked on the providers' sites; Hisaab stores the confirmations rather than booking itself (that needs partner APIs and payments).
 - Place search and attractions use free public services (OpenStreetMap, Wikipedia) that ask for light usage; heavy traffic would need a paid geocoding plan.
 - Plan items are last-write-wins when two people edit the same item at once (expenses use conflict detection).
