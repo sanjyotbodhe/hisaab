@@ -18,7 +18,7 @@ function Boot() {
   }
   return (
     <div className="boot">
-      <Loading text={slow ? 'Waking up the server, this can take up to a minute on free hosting…' : 'Loading…'} />
+      <Loading text={slow ? 'Still connecting to the server…' : 'Loading…'} />
     </div>
   );
 }

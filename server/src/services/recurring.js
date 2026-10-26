@@ -87,10 +87,19 @@ async function processRule(rule, today) {
   return created;
 }
 
-/** Runs all due rules (or just one, right after it is created). Returns expenses created. */
-export async function processDueRecurring({ now = new Date(), ruleId } = {}) {
+/**
+ * Runs all due rules, or only one rule / one group's rules. Returns expenses created.
+ * Called by the scheduler / cron, right after a rule is created, and when a group is
+ * opened, so balances are never shown without expenses that were already due.
+ */
+export async function processDueRecurring({ now = new Date(), ruleId, groupId } = {}) {
   const today = todayCalendar(now);
-  const filter = { active: true, nextRunAt: { $lte: today }, ...(ruleId && { _id: ruleId }) };
+  const filter = {
+    active: true,
+    nextRunAt: { $lte: today },
+    ...(ruleId && { _id: ruleId }),
+    ...(groupId && { group: groupId }),
+  };
   const rules = await RecurringExpense.find(filter).sort({ nextRunAt: 1 }).limit(500);
   let created = 0;
   for (const rule of rules) {

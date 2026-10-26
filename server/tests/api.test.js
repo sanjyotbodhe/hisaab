@@ -343,3 +343,52 @@ describe('robustness', () => {
     assert.equal(res.body.db, 'up');
   });
 });
+
+describe('serverless mode (Vercel)', () => {
+  it('cron endpoint requires the secret and runs due recurring expenses', async () => {
+    assert.equal((await request(app).get('/api/cron/recurring')).status, 401);
+    assert.equal((await request(app).get('/api/cron/recurring').set('Authorization', 'Bearer wrong')).status, 401);
+    const ok = await request(app).get('/api/cron/recurring').set('Authorization', 'Bearer test-cron-secret');
+    assert.equal(ok.status, 200);
+    assert.equal(ok.body.ok, true);
+  });
+
+  it('opening a group catches up recurring expenses that fell due', async () => {
+    const a = await newUser('A');
+    const g = await groupWith(a);
+    const rule = (
+      await a.post(`/api/groups/${g.id}/recurring`, {
+        description: 'Netflix',
+        amount: '649',
+        paidBy: a.user.id,
+        splitType: 'equal',
+        participants: [{ user: a.user.id }],
+        frequency: 'monthly',
+        startDate: today(),
+      })
+    ).body.recurring;
+    assert.equal(await Expense.countDocuments({ recurring: rule.id }), 1);
+    // Pretend the next occurrence fell due yesterday and no cron has run since.
+    const yesterday = new Date(`${today()}T00:00:00Z`);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    await RecurringExpense.updateOne({ _id: rule.id }, { $set: { nextRunAt: yesterday } });
+    await a.get(`/api/groups/${g.id}`);
+    assert.equal(await Expense.countDocuments({ recurring: rule.id }), 2);
+  });
+
+  it('lazy DB connection failures become a clean 503', async () => {
+    const { createApp } = await import('../src/app.js');
+    const broken = createApp({
+      connect: async () => {
+        const err = new Error('getaddrinfo ENOTFOUND cluster0.example.net');
+        err.name = 'MongoNetworkError';
+        throw err;
+      },
+    });
+    const res = await request(broken).get('/api/auth/me');
+    assert.equal(res.status, 503);
+    assert.equal(res.body.error.code, 'DB_UNAVAILABLE');
+    const health = await request(broken).get('/api/health');
+    assert.equal(health.body.status !== undefined, true);
+  });
+});

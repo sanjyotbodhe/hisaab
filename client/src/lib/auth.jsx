@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
 
   const check = useCallback(async () => {
     setStatus('loading');
-    // Free hosting sleeps when idle; tell the user if the first request is slow.
+    // Tell the user if the first request (cold start + DB connect) is slow.
     const t = setTimeout(() => setSlow(true), 4000);
     try {
       const { user: u } = await api('/auth/me');

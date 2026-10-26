@@ -9,6 +9,7 @@ import { groupBalances, userNetByGroup, userNetInGroup } from '../services/balan
 import { nameMap } from '../services/expenses.js';
 import { Activity } from '../models/Activity.js';
 import { RecurringExpense } from '../models/RecurringExpense.js';
+import { processDueRecurring } from '../services/recurring.js';
 import { conflict, forbidden, notFound } from '../utils/errors.js';
 import { formatINR } from '../../../shared/split.js';
 
@@ -85,6 +86,12 @@ router.post('/', validate({ body: groupBody }), async (req, res) => {
 });
 
 router.get('/:groupId', loadGroupMember, async (req, res) => {
+  // Catch up on recurring expenses that fell due since the last scheduled run.
+  try {
+    await processDueRecurring({ groupId: req.group._id });
+  } catch (err) {
+    console.error('[recurring] catch-up on open failed:', err.message);
+  }
   res.json({ group: await serializeGroup(req.group, req.user._id) });
 });
 
