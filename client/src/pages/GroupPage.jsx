@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ExpenseForm from '../components/ExpenseForm.jsx';
+import GroupGlance from '../components/group/GroupGlance.jsx';
 import ActivityTab from '../components/group/ActivityTab.jsx';
 import BalancesTab from '../components/group/BalancesTab.jsx';
 import BookingsTab from '../components/group/BookingsTab.jsx';
@@ -50,6 +51,16 @@ function GroupPage({ groupId }) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null); // expense being edited
   const [settling, setSettling] = useState(null); // null | {} | preset
+
+  // Opened from the dashboard's "Add expense": open the form once, then drop the flag from the URL.
+  useEffect(() => {
+    if (params.get('add') !== '1') return;
+    setAdding(true);
+    const next = new URLSearchParams(params);
+    next.delete('add');
+    setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const changed = () => {
     setVersion((v) => v + 1);
@@ -152,7 +163,12 @@ function GroupPage({ groupId }) {
       </nav>
 
       <section className="tab-panel">
-        {tab === 'expenses' && <ExpensesTab {...tabProps} onOpen={openExpense} onAdd={() => setAdding(true)} />}
+        {tab === 'expenses' && (
+          <div className="expenses-layout">
+            <ExpensesTab {...tabProps} onOpen={openExpense} onAdd={() => setAdding(true)} />
+            <GroupGlance group={group} me={user} version={version} />
+          </div>
+        )}
         {tab === 'balances' && <BalancesTab {...tabProps} onSettle={(preset) => setSettling(preset)} />}
         {tab === 'trip' && <TripTab {...tabProps} />}
         {tab === 'bookings' && <BookingsTab {...tabProps} />}
