@@ -1,4 +1,4 @@
-import { netBalances, pairwiseDebts, simplifyDebts } from '../../../shared/balances.js';
+import { netBalances, pairwiseDebts, simplifyDebts } from '../shared/balances.js';
 import { Expense } from '../models/Expense.js';
 import { Settlement } from '../models/Settlement.js';
 

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { SPLIT_TYPES } from '../../../shared/split.js';
+import { SPLIT_TYPES } from '../shared/split.js';
 import { CATEGORIES } from './Expense.js';
 
 export const FREQUENCIES = ['weekly', 'monthly'];

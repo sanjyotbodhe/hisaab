@@ -422,3 +422,35 @@ describe('serverless mode (Vercel)', () => {
     assert.equal(health.body.status !== undefined, true);
   });
 });
+
+describe('Vercel entrypoint', () => {
+  it('exports a working Express app with lazy DB connection', async () => {
+    const { default: vercelApp } = await import('../src/vercel.js');
+    const health = await request(vercelApp).get('/api/health');
+    assert.equal(health.status, 200);
+    assert.equal(health.body.db, 'up');
+    assert.equal((await request(vercelApp).get('/api/auth/me')).status, 401);
+  });
+
+  it('the dashboard list also catches up recurring expenses before showing balances', async () => {
+    const a = await newUser('A');
+    const b = await newUser('B');
+    const g = await groupWith(a, b);
+    const rule = (
+      await a.post(`/api/groups/${g.id}/recurring`, {
+        description: 'Wifi',
+        amount: '1000',
+        paidBy: a.user.id,
+        splitType: 'equal',
+        participants: [{ user: a.user.id }, { user: b.user.id }],
+        frequency: 'monthly',
+        startDate: today(),
+      })
+    ).body.recurring;
+    const yesterday = new Date(`${today()}T00:00:00Z`);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    await RecurringExpense.updateOne({ _id: rule.id }, { $set: { nextRunAt: yesterday } });
+    const list = (await b.get('/api/groups')).body.groups;
+    assert.equal(list.find((x) => x.id === g.id).myBalance, -100000); // two occurrences of 500 each
+  });
+});

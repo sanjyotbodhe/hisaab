@@ -8,8 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    // The split/balance math lives in /shared and is used by both server and client.
-    alias: { '@shared': path.resolve(__dirname, '../shared') },
+    // The split/balance math lives in server/src/shared and is reused here for live previews.
+    alias: { '@shared': path.resolve(__dirname, '../server/src/shared') },
   },
   server: {
     port: 5173,

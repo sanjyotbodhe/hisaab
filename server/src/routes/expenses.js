@@ -16,7 +16,7 @@ import {
 } from '../services/expenses.js';
 import { parseCalendarDate } from '../utils/dates.js';
 import { AppError, badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
-import { fromPaise } from '../../../shared/split.js';
+import { fromPaise } from '../shared/split.js';
 
 // Mounted at /api/groups/:groupId/expenses after loadGroupMember (req.group, req.membership).
 const router = Router({ mergeParams: true });

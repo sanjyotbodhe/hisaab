@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CATEGORIES } from '../models/Expense.js';
 import { User } from '../models/User.js';
-import { SPLIT_TYPES, computeSplits, toPaise, MAX_AMOUNT_PAISE } from '../../../shared/split.js';
+import { SPLIT_TYPES, computeSplits, toPaise, MAX_AMOUNT_PAISE } from '../shared/split.js';
 import { objectId } from '../middleware/validate.js';
 import { addDays, parseCalendarDate, todayCalendar } from '../utils/dates.js';
 import { AppError } from '../utils/errors.js';

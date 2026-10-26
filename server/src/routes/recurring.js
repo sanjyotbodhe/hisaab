@@ -16,7 +16,7 @@ import {
 import { processDueRecurring } from '../services/recurring.js';
 import { addDays, nextOccurrence, todayCalendar } from '../utils/dates.js';
 import { AppError, forbidden, notFound } from '../utils/errors.js';
-import { SPLIT_TYPES } from '../../../shared/split.js';
+import { SPLIT_TYPES } from '../shared/split.js';
 
 // Mounted at /api/groups/:groupId/recurring after loadGroupMember.
 const router = Router({ mergeParams: true });

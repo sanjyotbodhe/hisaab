@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { netBalances, pairwiseDebts, simplifyDebts } from '../../shared/balances.js';
-import { computeSplits, distribute, formatINR, SplitError, toPaise } from '../../shared/split.js';
+import { netBalances, pairwiseDebts, simplifyDebts } from '../src/shared/balances.js';
+import { computeSplits, distribute, formatINR, SplitError, toPaise } from '../src/shared/split.js';
 
 const sum = (rows) => rows.reduce((a, r) => a + r.amount, 0);
 

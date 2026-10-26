@@ -1,4 +1,4 @@
-import { computeSplits, SplitError } from '../../../shared/split.js';
+import { computeSplits, SplitError } from '../shared/split.js';
 import { Expense } from '../models/Expense.js';
 import { Group } from '../models/Group.js';
 import { RecurringExpense } from '../models/RecurringExpense.js';
@@ -93,16 +93,17 @@ async function processRule(rule, today) {
 
 /**
  * Runs all due rules, or only one rule / one group's rules. Returns expenses created.
- * Called by the scheduler / cron, right after a rule is created, and when a group is
- * opened, so balances are never shown without expenses that were already due.
+ * Called by the scheduler / cron, right after a rule is created, and whenever groups or
+ * balances are read, so balances are never shown without expenses that were already due.
  */
-export async function processDueRecurring({ now = new Date(), ruleId, groupId } = {}) {
+export async function processDueRecurring({ now = new Date(), ruleId, groupId, groupIds } = {}) {
   const today = todayCalendar(now);
   const filter = {
     active: true,
     nextRunAt: { $lte: today },
     ...(ruleId && { _id: ruleId }),
     ...(groupId && { group: groupId }),
+    ...(groupIds && { group: { $in: groupIds } }),
   };
   const rules = await RecurringExpense.find(filter).sort({ nextRunAt: 1 }).limit(500);
   let created = 0;

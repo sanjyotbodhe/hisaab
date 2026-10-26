@@ -11,7 +11,7 @@ import { Activity } from '../models/Activity.js';
 import { RecurringExpense } from '../models/RecurringExpense.js';
 import { processDueRecurring } from '../services/recurring.js';
 import { conflict, forbidden, notFound } from '../utils/errors.js';
-import { formatINR } from '../../../shared/split.js';
+import { formatINR } from '../shared/split.js';
 
 const router = Router();
 
@@ -58,6 +58,12 @@ async function serializeGroup(group, userId) {
 // List my groups with my balance in each.
 router.get('/', async (req, res) => {
   const groups = await Group.find({ 'members.user': req.user._id }).sort({ updatedAt: -1 });
+  // Add any recurring expenses that fell due, so the balances below are never stale.
+  try {
+    await processDueRecurring({ groupIds: groups.map((g) => g._id) });
+  } catch (err) {
+    console.error('[recurring] catch-up on list failed:', err.message);
+  }
   const nets = await userNetByGroup(
     groups.map((g) => g._id),
     req.user._id,

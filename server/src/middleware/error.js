@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { ZodError } from 'zod';
-import { SplitError } from '../../../shared/split.js';
+import { SplitError } from '../shared/split.js';
 import { AppError } from '../utils/errors.js';
 
 export function notFoundHandler(req, res) {
