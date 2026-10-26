@@ -18,6 +18,9 @@ import expenseRoutes from './routes/expenses.js';
 import groupRoutes from './routes/groups.js';
 import inviteRoutes from './routes/invites.js';
 import recurringRoutes from './routes/recurring.js';
+import planRoutes from './routes/plan.js';
+import bookingRoutes from './routes/bookings.js';
+import placesRoutes from './routes/places.js';
 import settlementRoutes from './routes/settlements.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -41,7 +44,7 @@ export function createApp({ connect } = {}) {
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           fontSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:'],
+          imgSrc: ["'self'", 'data:', 'https://tile.openstreetmap.org', 'https://upload.wikimedia.org'],
           connectSrc: ["'self'"],
         },
       },
@@ -85,6 +88,9 @@ export function createApp({ connect } = {}) {
   app.use('/api/groups/:groupId/expenses', requireAuth, loadGroupMember, expenseRoutes);
   app.use('/api/groups/:groupId/settlements', requireAuth, loadGroupMember, settlementRoutes);
   app.use('/api/groups/:groupId/recurring', requireAuth, loadGroupMember, recurringRoutes);
+  app.use('/api/groups/:groupId/plan', requireAuth, loadGroupMember, planRoutes);
+  app.use('/api/groups/:groupId/bookings', requireAuth, loadGroupMember, bookingRoutes);
+  app.use('/api/places', requireAuth, placesRoutes);
   app.use('/api/groups', requireAuth, groupRoutes);
   app.use('/api', notFoundHandler);
 
