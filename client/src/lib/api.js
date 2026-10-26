@@ -9,7 +9,8 @@ export class ApiError extends Error {
   /** { fieldName: message } for showing errors next to form inputs. */
   fieldErrors() {
     const out = {};
-    for (const d of this.details ?? []) {
+    // `details` is a list of field errors for validation failures, or an object otherwise.
+    for (const d of Array.isArray(this.details) ? this.details : []) {
       if (d?.field && !out[d.field]) out[d.field] = d.message;
     }
     return out;

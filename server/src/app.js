@@ -57,9 +57,19 @@ export function createApp({ connect } = {}) {
   app.use(cookieParser());
 
   app.get('/api/health', async (req, res) => {
-    if (connect) await connect().catch(() => {}); // report "down" instead of throwing
-    const dbUp = mongoose.connection.readyState === 1;
-    res.status(dbUp ? 200 : 503).json({ status: dbUp ? 'ok' : 'degraded', db: dbUp ? 'up' : 'down' });
+    let problem = null;
+    if (connect) {
+      // Report the reason instead of throwing, so deployments are easy to diagnose.
+      await connect().catch((err) => {
+        problem = err.code === 'MISCONFIGURED' ? err.message : (err.details?.reason ?? 'unknown');
+      });
+    }
+    const ok = !problem && mongoose.connection.readyState === 1;
+    res.status(ok ? 200 : 503).json({
+      status: ok ? 'ok' : 'degraded',
+      db: ok ? 'up' : 'down',
+      ...(problem ? { problem } : {}),
+    });
   });
 
   if (connect) {

@@ -454,3 +454,47 @@ describe('Vercel entrypoint', () => {
     assert.equal(list.find((x) => x.id === g.id).myBalance, -100000); // two occurrences of 500 each
   });
 });
+
+describe('deployment diagnostics', () => {
+  it('classifies database connection failures without leaking secrets', async () => {
+    const { classifyDbError } = await import('../src/db.js');
+    const { MongoClient } = await import('mongodb');
+    let parseErr;
+    try {
+      new MongoClient('not-a-mongo-uri');
+    } catch (err) {
+      parseErr = err;
+    }
+    assert.equal(classifyDbError(parseErr), 'invalid_connection_string');
+    assert.equal(
+      classifyDbError({ name: 'MongoServerError', code: 8000, message: 'bad auth : authentication failed' }),
+      'authentication_failed',
+    );
+    assert.equal(
+      classifyDbError({ name: 'MongoServerSelectionError', message: 'querySrv ENOTFOUND _mongodb._tcp.x.net' }),
+      'host_not_found',
+    );
+    assert.equal(
+      classifyDbError({ name: 'MongooseServerSelectionError', message: 'Server selection timed out after 8000 ms' }),
+      'unreachable',
+    );
+  });
+
+  it('a misconfigured deployment says which setting is missing, and health reports it', async () => {
+    const { createApp } = await import('../src/app.js');
+    const { AppError } = await import('../src/utils/errors.js');
+    const broken = createApp({
+      connect: async () => {
+        throw new AppError(500, 'MISCONFIGURED', 'Server configuration problem: MONGODB_URI is not set', {
+          problems: ['MONGODB_URI is not set'],
+        });
+      },
+    });
+    const me = await request(broken).get('/api/auth/me');
+    assert.equal(me.status, 500);
+    assert.equal(me.body.error.code, 'MISCONFIGURED');
+    assert.match(me.body.error.message, /MONGODB_URI/);
+    const health = await request(broken).get('/api/health');
+    assert.match(health.body.problem, /MONGODB_URI is not set/);
+  });
+});

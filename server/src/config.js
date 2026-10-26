@@ -19,14 +19,20 @@ export const config = {
   cronSecret: process.env.CRON_SECRET,
 };
 
-/** Fail fast on startup instead of failing on the first request. */
-export function assertConfig() {
+/** Names of required settings that are missing or invalid (never their values). */
+export function configProblems() {
   const problems = [];
   if (!config.mongoUri) problems.push('MONGODB_URI is not set');
   if (!config.jwtSecret) problems.push('JWT_SECRET is not set');
   else if (config.isProd && config.jwtSecret.length < 32) {
     problems.push('JWT_SECRET must be at least 32 characters in production');
   }
+  return problems;
+}
+
+/** Fail fast on startup instead of failing on the first request. */
+export function assertConfig() {
+  const problems = configProblems();
   if (problems.length) {
     throw new Error(`Invalid configuration:\n - ${problems.join('\n - ')}`);
   }
