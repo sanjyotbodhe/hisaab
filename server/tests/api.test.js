@@ -425,7 +425,7 @@ describe('serverless mode (Vercel)', () => {
 
 describe('Vercel entrypoint', () => {
   it('exports a working Express app with lazy DB connection', async () => {
-    const { default: vercelApp } = await import('../src/vercel.js');
+    const { default: vercelApp } = await import('../index.js');
     const health = await request(vercelApp).get('/api/health');
     assert.equal(health.status, 200);
     assert.equal(health.body.db, 'up');
