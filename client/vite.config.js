@@ -12,7 +12,7 @@ const CSP = [
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
-  "img-src 'self' data:",
+  "img-src 'self' data: https://tile.openstreetmap.org https://upload.wikimedia.org",
   "connect-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",

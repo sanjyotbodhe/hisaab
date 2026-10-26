@@ -46,6 +46,22 @@ function describe(a, meId) {
       return `${who} resumed “${m.description}”`;
     case 'recurring.deleted':
       return `${who} deleted the recurring expense “${m.description}”`;
+    case 'trip.updated':
+      return m.destination
+        ? `${who} updated the trip to ${m.destination}${m.startDate ? ` (${m.startDate} to ${m.endDate})` : ''}`
+        : `${who} updated the trip details`;
+    case 'plan.added':
+      return m.day ? `${who} planned “${m.title}” for ${m.day}` : `${who} suggested “${m.title}”`;
+    case 'plan.scheduled':
+      return `${who} scheduled “${m.title}” for ${m.day}`;
+    case 'plan.removed':
+      return `${who} removed “${m.title}” from the plan`;
+    case 'booking.added':
+      return `${who} saved the ${m.type === 'hotel' ? 'stay' : m.type} booking “${m.title}”`;
+    case 'booking.removed':
+      return `${who} removed the booking “${m.title}”`;
+    case 'booking.expensed':
+      return `${who} added the booking “${m.title}” as an expense (${amt(m.amount)})`;
     case 'recurring.auto_paused':
       return `“${m.description}” was paused automatically: ${m.reason}`;
     default:

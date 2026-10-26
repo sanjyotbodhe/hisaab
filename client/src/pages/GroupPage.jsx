@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ExpenseForm from '../components/ExpenseForm.jsx';
 import ActivityTab from '../components/group/ActivityTab.jsx';
 import BalancesTab from '../components/group/BalancesTab.jsx';
+import BookingsTab from '../components/group/BookingsTab.jsx';
+import TripTab from '../components/group/TripTab.jsx';
 import ExpensesTab from '../components/group/ExpensesTab.jsx';
 import MembersTab from '../components/group/MembersTab.jsx';
 import RecurringTab from '../components/group/RecurringTab.jsx';
@@ -19,6 +21,8 @@ import { useResource } from '../lib/useResource.js';
 const TABS = [
   { id: 'expenses', label: 'Expenses', icon: 'receipt' },
   { id: 'balances', label: 'Balances', icon: 'scale' },
+  { id: 'trip', label: 'Trip plan', icon: 'map' },
+  { id: 'bookings', label: 'Bookings', icon: 'ticket' },
   { id: 'recurring', label: 'Recurring', icon: 'repeat' },
   { id: 'activity', label: 'Activity', icon: 'activity' },
   { id: 'members', label: 'Members', icon: 'users' },
@@ -150,6 +154,8 @@ function GroupPage({ groupId }) {
       <section className="tab-panel">
         {tab === 'expenses' && <ExpensesTab {...tabProps} onOpen={openExpense} onAdd={() => setAdding(true)} />}
         {tab === 'balances' && <BalancesTab {...tabProps} onSettle={(preset) => setSettling(preset)} />}
+        {tab === 'trip' && <TripTab {...tabProps} />}
+        {tab === 'bookings' && <BookingsTab {...tabProps} />}
         {tab === 'recurring' && <RecurringTab {...tabProps} />}
         {tab === 'activity' && <ActivityTab {...tabProps} />}
         {tab === 'members' && (
