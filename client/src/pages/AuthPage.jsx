@@ -57,6 +57,13 @@ export default function AuthPage({ mode }) {
           <p className="hand neg">Kabir pays Meera ₹860.50</p>
           <p className="hand pos">All square in 2 payments, not 9.</p>
         </div>
+        <ul className="feature-stickers" aria-label="What Hisaab does">
+          <li className="sticker sticker-lemon">Split 4 ways: equal, exact, %, shares</li>
+          <li className="sticker sticker-pink">Plan trips on a map</li>
+          <li className="sticker sticker-mint">Pay by UPI or Razorpay</li>
+          <li className="sticker sticker-sky">Rent adds itself monthly</li>
+          <li className="sticker sticker-lilac">Insights on your spending</li>
+        </ul>
       </section>
 
       <section className="auth-card">

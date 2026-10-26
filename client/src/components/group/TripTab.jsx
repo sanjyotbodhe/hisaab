@@ -354,7 +354,7 @@ export default function TripTab({ group, me, version, onChanged }) {
               {trip.startDate
                 ? `${formatDate(trip.startDate)} – ${formatDate(trip.endDate)} · ${days.length} day${days.length === 1 ? '' : 's'}`
                 : 'Pick a destination and dates. Everyone in the group can add places, vote and plan days.'}
-              {countdown(trip) && <strong className="trip-countdown"> · {countdown(trip)}</strong>}
+              {countdown(trip) && <strong className="trip-countdown">{countdown(trip)}</strong>}
             </p>
           </div>
         </div>
