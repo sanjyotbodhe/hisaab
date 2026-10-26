@@ -1,0 +1,4 @@
+// Must be imported before anything that reads config.
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-that-is-long-enough-for-tests-1234';
+process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://unused-in-tests';
