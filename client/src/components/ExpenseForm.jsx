@@ -16,10 +16,16 @@ function prefillValues(type, ids, amountPaise) {
   const out = {};
   if (type === 'shares') ids.forEach((id) => (out[id] = '1'));
   if (type === 'percent' && ids.length) {
-    distribute(10000, ids.map(() => 1)).forEach((bp, i) => (out[ids[i]] = fromPaise(bp).replace(/\.00$/, '')));
+    distribute(
+      10000,
+      ids.map(() => 1),
+    ).forEach((bp, i) => (out[ids[i]] = fromPaise(bp).replace(/\.00$/, '')));
   }
   if (type === 'exact' && ids.length && amountPaise > 0) {
-    distribute(amountPaise, ids.map(() => 1)).forEach((p, i) => (out[ids[i]] = fromPaise(p)));
+    distribute(
+      amountPaise,
+      ids.map(() => 1),
+    ).forEach((p, i) => (out[ids[i]] = fromPaise(p)));
   }
   return out;
 }
@@ -81,10 +87,22 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
     return list;
   }, [group.members, expense]);
 
-  const set = (patch) => setF((s) => ({ ...s, ...patch }));
+  const set = (patch) => {
+    setF((s) => ({ ...s, ...patch }));
+    // Clear errors for the fields being edited, so stale messages don't linger.
+    setErrors((e) => {
+      const next = { ...e };
+      for (const key of Object.keys(patch)) delete next[key];
+      if ('values' in patch || 'selected' in patch || 'splitType' in patch) delete next.participants;
+      return next;
+    });
+  };
   const amountPaise = toPaise(f.amount);
   const selectedIds = people.filter((p) => f.selected.has(p.id)).map((p) => p.id);
-  const participants = selectedIds.map((id) => ({ user: id, value: f.splitType === 'equal' ? null : (f.values[id] ?? '') }));
+  const participants = selectedIds.map((id) => ({
+    user: id,
+    value: f.splitType === 'equal' ? null : (f.values[id] ?? ''),
+  }));
 
   // Live preview using the exact same code the server uses to validate and store the split.
   const preview = useMemo(() => {
@@ -130,7 +148,8 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
     setFormError(null);
     const local = {};
     if (!f.description.trim()) local.description = 'Description is required';
-    if (Number.isNaN(amountPaise) || amountPaise <= 0) local.amount = 'Enter an amount greater than 0, like 450 or 99.50';
+    if (Number.isNaN(amountPaise) || amountPaise <= 0)
+      local.amount = 'Enter an amount greater than 0, like 450 or 99.50';
     if (selectedIds.length === 0) local.participants = 'Pick at least one person';
     else if (preview.error) local.participants = preview.error;
     if (Object.keys(local).length) {
@@ -226,13 +245,24 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
               </select>
             </Field>
             <Field label="First on" htmlFor="ex-start" error={errors.startDate}>
-              <input id="ex-start" type="date" value={f.startDate} onChange={(e) => set({ startDate: e.target.value })} />
+              <input
+                id="ex-start"
+                type="date"
+                value={f.startDate}
+                onChange={(e) => set({ startDate: e.target.value })}
+              />
             </Field>
           </>
         ) : (
           <>
             <Field label="Date" htmlFor="ex-date" error={errors.date}>
-              <input id="ex-date" type="date" value={f.date} max={todayYMD()} onChange={(e) => set({ date: e.target.value })} />
+              <input
+                id="ex-date"
+                type="date"
+                value={f.date}
+                max={todayYMD()}
+                onChange={(e) => set({ date: e.target.value })}
+              />
             </Field>
             <Field label="Category" htmlFor="ex-cat">
               <select id="ex-cat" value={f.category} onChange={(e) => set({ category: e.target.value })}>
@@ -295,9 +325,7 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
                       inputMode="decimal"
                       aria-label={`${SPLIT_LABELS[f.splitType]} for ${p.name}`}
                       value={f.values[p.id] ?? ''}
-                      onChange={(e) =>
-                        set({ values: { ...f.values, [p.id]: e.target.value.replace(/[^\d.]/g, '') } })
-                      }
+                      onChange={(e) => set({ values: { ...f.values, [p.id]: e.target.value.replace(/[^\d.]/g, '') } })}
                     />
                     <span className="unit">{unit}</span>
                   </span>
@@ -318,7 +346,9 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
         )}
         {f.splitType === 'percent' && (
           <p className={`split-sum ${enteredTotal === 10000 ? 'ok' : ''}`}>
-            {enteredTotal === 10000 ? 'Adds up to 100%.' : `${fromPaise(enteredTotal).replace(/\.00$/, '')}% of 100% assigned`}
+            {enteredTotal === 10000
+              ? 'Adds up to 100%.'
+              : `${fromPaise(enteredTotal).replace(/\.00$/, '')}% of 100% assigned`}
           </p>
         )}
         {errors.participants && (
@@ -330,7 +360,13 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
 
       {mode === 'expense' && (
         <Field label="Notes (optional)" htmlFor="ex-notes" error={errors.notes}>
-          <textarea id="ex-notes" rows={2} maxLength={500} value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
+          <textarea
+            id="ex-notes"
+            rows={2}
+            maxLength={500}
+            value={f.notes}
+            onChange={(e) => set({ notes: e.target.value })}
+          />
         </Field>
       )}
 

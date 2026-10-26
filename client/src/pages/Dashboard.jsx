@@ -33,7 +33,17 @@ function CreateGroupForm({ onCreated, onCancel }) {
   return (
     <form className="form" onSubmit={submit} noValidate>
       <Field label="Group name" htmlFor="g-name" error={errors.name}>
-        <input id="g-name" value={name} maxLength={60} placeholder="e.g. Flat 302, Goa trip" onChange={(e) => setName(e.target.value)} autoFocus />
+        <input
+          id="g-name"
+          value={name}
+          maxLength={60}
+          placeholder="e.g. Flat 302, Goa trip"
+          onChange={(e) => {
+            setName(e.target.value);
+            setErrors({});
+          }}
+          autoFocus
+        />
       </Field>
       <Field label="Description (optional)" htmlFor="g-desc" error={errors.description}>
         <input id="g-desc" value={description} maxLength={200} onChange={(e) => setDescription(e.target.value)} />

@@ -16,6 +16,12 @@ export default function SettleForm({ group, me, preset, onSaved, onCancel }) {
   const [saving, setSaving] = useState(false);
   const requestId = useRef(newRequestId());
 
+  const clear = (...keys) =>
+    setErrors((e) => {
+      const next = { ...e };
+      keys.forEach((k) => delete next[k]);
+      return next;
+    });
   const name = (id) => group.members.find((m) => m.id === id)?.name ?? '';
 
   async function submit(e) {
@@ -55,12 +61,26 @@ export default function SettleForm({ group, me, preset, onSaved, onCancel }) {
     <form className="form" onSubmit={submit} noValidate>
       <div className="row-2">
         <Field label="Who paid" htmlFor="st-from" error={errors.from}>
-          <select id="st-from" value={from} onChange={(e) => setFrom(e.target.value)}>
+          <select
+            id="st-from"
+            value={from}
+            onChange={(e) => {
+              setFrom(e.target.value);
+              clear('from', 'to');
+            }}
+          >
             {options}
           </select>
         </Field>
         <Field label="Who received" htmlFor="st-to" error={errors.to}>
-          <select id="st-to" value={to} onChange={(e) => setTo(e.target.value)}>
+          <select
+            id="st-to"
+            value={to}
+            onChange={(e) => {
+              setTo(e.target.value);
+              clear('from', 'to');
+            }}
+          >
             {options}
           </select>
         </Field>
@@ -73,12 +93,24 @@ export default function SettleForm({ group, me, preset, onSaved, onCancel }) {
             inputMode="decimal"
             value={amount}
             placeholder="0.00"
-            onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
+            onChange={(e) => {
+              setAmount(e.target.value.replace(/[^\d.]/g, ''));
+              clear('amount');
+            }}
             autoFocus
           />
         </Field>
         <Field label="Date" htmlFor="st-date" error={errors.date}>
-          <input id="st-date" type="date" value={date} max={todayYMD()} onChange={(e) => setDate(e.target.value)} />
+          <input
+            id="st-date"
+            type="date"
+            value={date}
+            max={todayYMD()}
+            onChange={(e) => {
+              setDate(e.target.value);
+              clear('date');
+            }}
+          />
         </Field>
       </div>
       <Field label="Note (optional)" htmlFor="st-note" hint="e.g. UPI ref or “cash at the airport”">

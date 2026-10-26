@@ -14,6 +14,8 @@ export default function AuthPage({ mode }) {
   const [formError, setFormError] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  const clear = (key) => setErrors(({ [key]: _, ...rest }) => rest);
+
   async function submit(e) {
     e.preventDefault();
     setErrors({});
@@ -41,10 +43,14 @@ export default function AuthPage({ mode }) {
     <div className="auth">
       <section className="auth-intro">
         <div className="brand brand-lg">
-          <span className="brand-mark" aria-hidden="true">₹</span>
+          <span className="brand-mark" aria-hidden="true">
+            ₹
+          </span>
           <span className="brand-name">Hisaab</span>
         </div>
-        <p className="auth-lede">Shared expenses for flatmates, trips and friends, with the fewest payments to settle up.</p>
+        <p className="auth-lede">
+          Shared expenses for flatmates, trips and friends, with the fewest payments to settle up.
+        </p>
         <div className="ledger-demo" aria-hidden="true">
           <p className="hand">Goa trip, 4 people, 23 expenses</p>
           <p className="hand neg">Rohan pays Meera ₹2,140.00</p>
@@ -58,11 +64,29 @@ export default function AuthPage({ mode }) {
         <form className="form" onSubmit={submit} noValidate>
           {!isLogin && (
             <Field label="Name" htmlFor="name" error={errors.name}>
-              <input id="name" autoComplete="name" value={name} maxLength={50} onChange={(e) => setName(e.target.value)} />
+              <input
+                id="name"
+                autoComplete="name"
+                value={name}
+                maxLength={50}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  clear('name');
+                }}
+              />
             </Field>
           )}
           <Field label="Email" htmlFor="email" error={errors.email}>
-            <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clear('email');
+              }}
+            />
           </Field>
           <Field
             label="Password"
@@ -76,7 +100,10 @@ export default function AuthPage({ mode }) {
               autoComplete={isLogin ? 'current-password' : 'new-password'}
               value={password}
               maxLength={72}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clear('password');
+              }}
             />
           </Field>
           <FormError error={formError} />
@@ -86,7 +113,9 @@ export default function AuthPage({ mode }) {
         </form>
         <p className="auth-switch">
           {isLogin ? 'New to Hisaab? ' : 'Already have an account? '}
-          <Link to={`${isLogin ? '/register' : '/login'}${location.search}`}>{isLogin ? 'Create an account' : 'Log in'}</Link>
+          <Link to={`${isLogin ? '/register' : '/login'}${location.search}`}>
+            {isLogin ? 'Create an account' : 'Log in'}
+          </Link>
         </p>
       </section>
     </div>

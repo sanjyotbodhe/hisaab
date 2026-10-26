@@ -61,12 +61,54 @@ function NotFound() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<PublicOnly><AuthPage mode="login" /></PublicOnly>} />
-      <Route path="/register" element={<PublicOnly><AuthPage mode="register" /></PublicOnly>} />
-      <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
-      <Route path="/groups/:groupId" element={<RequireAuth><GroupPage /></RequireAuth>} />
-      <Route path="/join/:code" element={<RequireAuth><JoinPage /></RequireAuth>} />
-      <Route path="*" element={<RequireAuth><NotFound /></RequireAuth>} />
+      <Route
+        path="/login"
+        element={
+          <PublicOnly>
+            <AuthPage mode="login" />
+          </PublicOnly>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicOnly>
+            <AuthPage mode="register" />
+          </PublicOnly>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/groups/:groupId"
+        element={
+          <RequireAuth>
+            <GroupPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/join/:code"
+        element={
+          <RequireAuth>
+            <JoinPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="*"
+        element={
+          <RequireAuth>
+            <NotFound />
+          </RequireAuth>
+        }
+      />
     </Routes>
   );
 }
