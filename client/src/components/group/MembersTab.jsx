@@ -51,7 +51,7 @@ export default function MembersTab({ group, me, onChanged, onLeft }) {
   const toast = useToast();
   const isAdmin = group.myRole === 'admin';
   const [busy, setBusy] = useState(null);
-  const inviteUrl = group.inviteCode ? `${window.location.origin}/join/${group.inviteCode}` : null;
+  const inviteUrl = group.inviteCode ? `${window.location.origin}/#/join/${group.inviteCode}` : null;
 
   async function run(key, fn, success) {
     setBusy(key);

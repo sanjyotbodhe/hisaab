@@ -22,8 +22,16 @@ const TABS = [
   { id: 'members', label: 'Members' },
 ];
 
-export default function GroupPage() {
+/**
+ * Keyed by group id so switching directly between groups (URL edit, back/forward)
+ * starts from a clean slate instead of briefly showing the previous group's data.
+ */
+export default function GroupPageRoute() {
   const { groupId } = useParams();
+  return <GroupPage key={groupId} groupId={groupId} />;
+}
+
+function GroupPage({ groupId }) {
   const { user } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
