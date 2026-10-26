@@ -53,7 +53,7 @@ flowchart LR
   end
   subgraph Vercel project - one domain
     CL[client service<br/>Vite static build] -.serves.-> UI
-    API[server service<br/>Express, src/vercel.js] --> MW[auth · CSRF · zod validation · group membership]
+    API[server service<br/>Express, index.js] --> MW[auth · CSRF · zod validation · group membership]
     MW --> R[routes: auth, groups, invites,<br/>expenses, settlements, recurring]
     R --> S[services: balances, recurring catch-up, activity]
     S -.uses.-> SH
@@ -69,14 +69,14 @@ flowchart LR
 
 ```
 hisaab/
-├── vercel.json             # Vercel Services: client + server, public routing, security headers
+├── vercel.json             # Vercel Services: client + server services, public routing
 ├── server/                 # "server" service (Express API)
+│   ├── index.js            # Vercel entrypoint: exports the app with a lazy DB connection
 │   ├── src/
 │   │   ├── shared/         # pure money logic, also imported by the client for live previews
 │   │   │   ├── split.js    # money parsing, split engine, rounding
 │   │   │   └── balances.js # net balances, pairwise debts, debt simplification
 │   │   ├── app.js          # Express app: security middleware, routes, static client (local)
-│   │   ├── vercel.js       # Vercel entrypoint: exports the app with a lazy DB connection
 │   │   ├── server.js       # long-running mode (local): DB, scheduler, graceful shutdown
 │   │   ├── models/         # User, Group, Expense, Settlement, Activity, RecurringExpense
 │   │   ├── routes/         # HTTP layer: validation + authorization + responses
@@ -121,7 +121,7 @@ hisaab/
 
 - Passwords hashed with bcrypt (cost 12); login responses are identical for unknown email and wrong password, with a dummy hash to equalise timing.
 - JWT in an `httpOnly`, `SameSite=Lax`, `Secure` (in production) cookie; plus a required `X-Requested-With` header on every state-changing request.
-- Rate limiting on login/register; strict Content-Security-Policy and security headers (Helmet on the API, `vercel.json` for the whole deployment). Fonts are self-hosted, so the app makes no third-party requests.
+- Rate limiting on login/register; strict Content-Security-Policy: Helmet sets it (plus other security headers) on every API response, and the production build of the React page carries the same policy in a `<meta>` tag. Fonts are self-hosted, so the app makes no third-party requests.
 - Every route checks group membership; non-members get 404 so group ids can't be probed. Edits/deletes are limited to the creator, payer or an admin. Only admins see the invite code.
 - All input validated with Zod; search text is regex-escaped; CSV export neutralises spreadsheet formula injection.
 - Secrets only in environment variables; `.env` is git-ignored.
@@ -201,12 +201,12 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
 Deployed on **Vercel** using **Vercel Services** with **MongoDB Atlas**. `vercel.json` defines two services in one project, on one domain:
 
-| Service  | Root      | Framework | Public path     | Notes                                                         |
-| -------- | --------- | --------- | --------------- | ------------------------------------------------------------- |
-| `server` | `server/` | Express   | `/api/*`        | Entrypoint `src/vercel.js`; receives the full `/api/...` path |
-| `client` | `client/` | Vite      | everything else | Static build of the React app                                 |
+| Service  | Root      | Framework | Public path     | Notes                                                                           |
+| -------- | --------- | --------- | --------------- | ------------------------------------------------------------------------------- |
+| `server` | `server/` | Express   | `/api/*`        | Entrypoint `server/index.js` (auto-detected); receives the full `/api/...` path |
+| `client` | `client/` | Vite      | everything else | Static build of the React app                                                   |
 
-The browser calls the API on the same origin (`/api/...`), so there is no CORS and no service-to-service traffic (no bindings needed). Security headers are set once at the top level.
+The browser calls the API on the same origin (`/api/...`), so there is no CORS and no service-to-service traffic (no bindings needed).
 
 1. **MongoDB Atlas:** create a free M0 cluster → Database Access: add a database user → Network Access: allow `0.0.0.0/0` (Vercel functions have no fixed IPs) → Connect → Drivers: copy the connection string, insert the password and add the database name: `...mongodb.net/hisaab?retryWrites=true&w=majority`.
 2. **Vercel:** Add New → Project → import `sanjyotbodhe/hisaab`. Vercel reads the services from `vercel.json`. Add the environment variables `MONGODB_URI` and `JWT_SECRET` (optionally `CRON_SECRET`), then Deploy.
