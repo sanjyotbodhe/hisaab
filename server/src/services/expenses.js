@@ -11,11 +11,11 @@ export const amountField = z
   .transform((v, ctx) => {
     const paise = toPaise(v);
     if (Number.isNaN(paise) || paise <= 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter an amount greater than 0 with up to 2 decimals' });
+      ctx.addIssue({ code: 'custom', message: 'Enter an amount greater than 0 with up to 2 decimals' });
       return z.NEVER;
     }
     if (paise > MAX_AMOUNT_PAISE) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Amount is too large (max ₹1,00,00,000)' });
+      ctx.addIssue({ code: 'custom', message: 'Amount is too large (max ₹1,00,00,000)' });
       return z.NEVER;
     }
     return paise;
@@ -24,7 +24,7 @@ export const amountField = z
 export const calendarDateField = z.string().transform((v, ctx) => {
   const d = parseCalendarDate(v);
   if (!d) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a valid date (YYYY-MM-DD)' });
+    ctx.addIssue({ code: 'custom', message: 'Enter a valid date (YYYY-MM-DD)' });
     return z.NEVER;
   }
   return d;
@@ -53,7 +53,7 @@ const expenseFields = {
 
 export const createExpenseSchema = z.object({
   ...expenseFields,
-  clientRequestId: z.string().uuid('Invalid request id').optional(),
+  clientRequestId: z.uuid('Invalid request id').optional(),
 });
 
 export const updateExpenseSchema = z.object({

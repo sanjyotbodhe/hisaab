@@ -22,7 +22,7 @@ const authLimiter = rateLimit({
     }),
 });
 
-const email = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
+const email = z.string().trim().toLowerCase().pipe(z.email('Enter a valid email address').max(254));
 const password = z
   .string()
   .min(8, 'Password must be at least 8 characters')

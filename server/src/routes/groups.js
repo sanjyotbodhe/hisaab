@@ -126,7 +126,7 @@ router.get(
   loadGroupMember,
   validate({
     query: z.object({
-      before: z.string().datetime({ offset: true }).optional(),
+      before: z.iso.datetime({ offset: true }).optional(),
       limit: z.coerce.number().int().min(1).max(50).optional().default(30),
     }),
   }),

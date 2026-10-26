@@ -16,7 +16,7 @@ const createSchema = z.object({
   amount: amountField,
   note: z.string().trim().max(200, 'Note is too long').optional().default(''),
   date: calendarDateField.optional(),
-  clientRequestId: z.string().uuid('Invalid request id').optional(),
+  clientRequestId: z.uuid('Invalid request id').optional(),
 });
 
 function serialize(s, names) {
