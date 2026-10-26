@@ -1,0 +1,18 @@
+# One-click deploy on Render (Blueprint). One web service serves both the API and the React app.
+services:
+  - type: web
+    name: hisaab
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGODB_URI
+        sync: false # set in the Render dashboard (MongoDB Atlas connection string)
+      - key: JWT_SECRET
+        generateValue: true # Render generates a long random secret
