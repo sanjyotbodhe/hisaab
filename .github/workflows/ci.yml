@@ -13,7 +13,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
       - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm ci --prefix client
       - run: npm run format:check
       - run: npm test
       - run: npm run build

@@ -13,8 +13,10 @@ function safeEqual(a, b) {
 }
 
 /**
- * Called once a day by Vercel Cron (see vercel.json). On a long-running server the
- * in-process scheduler does the same job; either way the job is idempotent.
+ * Optional hook for an external scheduler (Vercel Cron, cron-job.org, GitHub Actions).
+ * Not required: due recurring expenses are also caught up whenever balances are read,
+ * and the long-running server runs an in-process scheduler. The job is idempotent.
+ * Disabled (always 401) unless CRON_SECRET is set.
  */
 router.get('/recurring', async (req, res) => {
   const header = req.get('Authorization') || '';

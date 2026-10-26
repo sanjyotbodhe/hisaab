@@ -15,7 +15,7 @@ export const config = {
   cookieName: 'hisaab_token',
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   recurringIntervalMinutes: Number(process.env.RECURRING_INTERVAL_MINUTES) || 10,
-  // Vercel Cron sends "Authorization: Bearer <CRON_SECRET>" when this is set.
+  // Optional: lets an external scheduler call /api/cron/recurring (Authorization: Bearer <CRON_SECRET>).
   cronSecret: process.env.CRON_SECRET,
 };
 
@@ -27,7 +27,6 @@ export function assertConfig() {
   else if (config.isProd && config.jwtSecret.length < 32) {
     problems.push('JWT_SECRET must be at least 32 characters in production');
   }
-  if (config.isServerless && !config.cronSecret) problems.push('CRON_SECRET is not set');
   if (problems.length) {
     throw new Error(`Invalid configuration:\n - ${problems.join('\n - ')}`);
   }
