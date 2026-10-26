@@ -27,7 +27,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "mongodb-memory-server": "^10.1.2",
+    "mongodb-memory-server-core": "^10.1.2",
     "supertest": "^7.0.0"
   }
 }

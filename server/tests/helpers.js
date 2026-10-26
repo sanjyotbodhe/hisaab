@@ -10,7 +10,7 @@ let memory = null;
 export async function startDb() {
   let uri = process.env.TEST_MONGODB_URI;
   if (!uri) {
-    const { MongoMemoryServer } = await import('mongodb-memory-server');
+    const { MongoMemoryServer } = await import('mongodb-memory-server-core');
     memory = await MongoMemoryServer.create();
     uri = memory.getUri('hisaab-test');
   }

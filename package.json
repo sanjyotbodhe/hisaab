@@ -3,13 +3,17 @@
   "private": true,
   "version": "1.0.0",
   "description": "Hisaab - shared expense tracking with debt simplification (MERN)",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
-    "install:all": "npm install --prefix server && npm install --prefix client",
-    "build": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
-    "start": "npm start --prefix server",
-    "dev:server": "npm run dev --prefix server",
-    "dev:client": "npm run dev --prefix client",
-    "test": "npm test --prefix server"
+    "build": "npm run build --workspace client",
+    "start": "npm start --workspace server",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "test": "npm test --workspace server"
   },
   "engines": {
     "node": ">=22"
