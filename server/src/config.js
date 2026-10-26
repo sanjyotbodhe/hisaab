@@ -17,7 +17,15 @@ export const config = {
   recurringIntervalMinutes: Number(process.env.RECURRING_INTERVAL_MINUTES) || 10,
   // Optional: lets an external scheduler call /api/cron/recurring (Authorization: Bearer <CRON_SECRET>).
   cronSecret: process.env.CRON_SECRET,
+  // Razorpay (optional). Payments are enabled only when both keys are set.
+  razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? '',
+  razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET ?? '',
+  razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET ?? '',
+  // Only overridden in automated tests, to point at a local mock of the Razorpay API.
+  razorpayApiBase: process.env.RAZORPAY_API_BASE || 'https://api.razorpay.com',
 };
+
+export const paymentsEnabled = () => Boolean(config.razorpayKeyId && config.razorpayKeySecret);
 
 /** Names of required settings that are missing or invalid (never their values). */
 export function configProblems() {

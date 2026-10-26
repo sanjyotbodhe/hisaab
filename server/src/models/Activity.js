@@ -25,6 +25,7 @@ export const ACTIVITY_TYPES = [
   'booking.added',
   'booking.removed',
   'booking.expensed',
+  'payment.received',
 ];
 
 /** Append-only audit log of everything that happens in a group. */

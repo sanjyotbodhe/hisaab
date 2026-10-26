@@ -27,6 +27,7 @@ function serialize(s, names) {
     to: { id: String(s.to), name: name(s.to) },
     amount: s.amount,
     note: s.note,
+    method: s.method ?? 'manual',
     date: s.date.toISOString().slice(0, 10),
     createdBy: { id: String(s.createdBy), name: name(s.createdBy) },
     createdAt: s.createdAt,
@@ -106,6 +107,12 @@ router.delete(
     const s = await Settlement.findOne({ _id: settlementId, group: req.group._id }).lean();
     if (!s) throw notFound('Payment');
     if (s.deletedAt) throw conflict('This payment was already removed', 'ALREADY_DELETED');
+    if (s.method === 'razorpay') {
+      throw conflict(
+        'Online payments verified by Razorpay are permanent records and can’t be removed',
+        'VERIFIED_PAYMENT',
+      );
+    }
     if (req.membership.role !== 'admin' && String(s.createdBy) !== String(req.user._id)) {
       throw forbidden('Only the person who recorded this payment, or a group admin, can remove it');
     }

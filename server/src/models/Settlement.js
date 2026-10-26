@@ -13,6 +13,9 @@ const settlementSchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null },
     deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     clientRequestId: { type: String },
+    // How it was paid: recorded by hand, or verified through Razorpay.
+    method: { type: String, enum: ['manual', 'razorpay'], default: 'manual' },
+    providerRef: { type: String, default: '' }, // Razorpay payment id
   },
   { timestamps: true },
 );

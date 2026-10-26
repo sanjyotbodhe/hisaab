@@ -19,6 +19,8 @@ import groupRoutes from './routes/groups.js';
 import inviteRoutes from './routes/invites.js';
 import recurringRoutes from './routes/recurring.js';
 import planRoutes from './routes/plan.js';
+import paymentRoutes from './routes/payments.js';
+import paymentWebhookRoutes from './routes/paymentWebhook.js';
 import bookingRoutes from './routes/bookings.js';
 import placesRoutes from './routes/places.js';
 import settlementRoutes from './routes/settlements.js';
@@ -41,11 +43,18 @@ export function createApp({ connect } = {}) {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
+          scriptSrc: ["'self'", 'https://checkout.razorpay.com'],
+          frameSrc: ['https://api.razorpay.com', 'https://checkout.razorpay.com'],
           styleSrc: ["'self'", "'unsafe-inline'"],
           fontSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:', 'https://tile.openstreetmap.org', 'https://upload.wikimedia.org'],
-          connectSrc: ["'self'"],
+          imgSrc: [
+            "'self'",
+            'data:',
+            'https://tile.openstreetmap.org',
+            'https://upload.wikimedia.org',
+            'https://*.razorpay.com',
+          ],
+          connectSrc: ["'self'", 'https://*.razorpay.com'],
         },
       },
     }),
@@ -56,7 +65,15 @@ export function createApp({ connect } = {}) {
   // In production the API and the React app share one origin, so CORS is only for local dev.
   if (!config.isProd) app.use('/api', cors({ origin: config.clientOrigin, credentials: true }));
 
-  app.use(express.json({ limit: '100kb' }));
+  app.use(
+    express.json({
+      limit: '100kb',
+      // Keep the exact bytes for webhook signature checks (re-serialised JSON would not match).
+      verify: (req, res, buf) => {
+        if (req.originalUrl.startsWith('/api/payments/webhook')) req.rawBody = buf.toString('utf8');
+      },
+    }),
+  );
   app.use(cookieParser());
 
   app.get('/api/health', async (req, res) => {
@@ -81,6 +98,8 @@ export function createApp({ connect } = {}) {
       next();
     });
   }
+  // Server-to-server webhook: authenticated by signature, so it sits before the CSRF check.
+  app.use('/api/payments', paymentWebhookRoutes);
   app.use('/api', requireCsrfHeader);
   app.use('/api/cron', cronRoutes);
   app.use('/api/auth', authRoutes);
@@ -91,6 +110,7 @@ export function createApp({ connect } = {}) {
   app.use('/api/groups/:groupId/plan', requireAuth, loadGroupMember, planRoutes);
   app.use('/api/groups/:groupId/bookings', requireAuth, loadGroupMember, bookingRoutes);
   app.use('/api/places', requireAuth, placesRoutes);
+  app.use('/api/groups/:groupId/payments', requireAuth, loadGroupMember, paymentRoutes);
   app.use('/api/groups', requireAuth, groupRoutes);
   app.use('/api', notFoundHandler);
 
