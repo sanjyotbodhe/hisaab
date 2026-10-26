@@ -20,12 +20,16 @@ function greeting() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-function StatTile({ label, paise, tone, note }) {
+function MiniStat({ label, paise, tone, icon }) {
   return (
-    <div className={`stat stat-${tone}`}>
-      <span className="stat-label">{label}</span>
-      <span className="stat-value hand">{formatINR(paise)}</span>
-      {note && <span className="stat-note">{note}</span>}
+    <div className="mini-stat">
+      <span className={`mini-icon ${tone}`} aria-hidden="true">
+        <Icon name={icon} size={17} />
+      </span>
+      <div>
+        <span className="stat-label">{label}</span>
+        <strong className={paise ? tone : 'muted'}>{formatINR(paise)}</strong>
+      </div>
     </div>
   );
 }
@@ -77,19 +81,23 @@ export default function Dashboard() {
         </Button>
       </header>
 
-      <section className="stats" aria-label="Your totals">
-        <StatTile label="You are owed" paise={owed} tone={owed ? 'pos' : 'zero'} />
-        <StatTile label="You owe" paise={owe} tone={owe ? 'neg' : 'zero'} />
-        <StatTile
-          label="Net position"
-          paise={Math.abs(net)}
-          tone={net > 0 ? 'pos' : net < 0 ? 'neg' : 'zero'}
-          note={
-            net === 0
+      <section className="stats balance-hero" aria-label="Your totals">
+        <div className="balance-hero-top">
+          <span className="stat-label">Net position</span>
+          <span className="balance-hero-value">
+            {net < 0 ? '−' : ''}
+            {formatINR(Math.abs(net))}
+          </span>
+          <span className="stat-note">
+            {net === 0
               ? 'All square everywhere'
-              : `${net > 0 ? 'Ahead' : 'Behind'} across ${openGroups} group${openGroups === 1 ? '' : 's'}`
-          }
-        />
+              : `${net > 0 ? 'Ahead' : 'Behind'} across ${openGroups} group${openGroups === 1 ? '' : 's'}`}
+          </span>
+        </div>
+        <div className="balance-split">
+          <MiniStat label="You are owed" paise={owed} tone="pos" icon="arrowDownLeft" />
+          <MiniStat label="You owe" paise={owe} tone="neg" icon="arrowUpRight" />
+        </div>
       </section>
 
       <section>

@@ -2,6 +2,8 @@
 const paths = {
   plus: 'M12 5v14M5 12h14',
   arrowRight: 'M5 12h14M13 6l6 6-6 6',
+  arrowDownLeft: 'M17 7L7 17M16 17H7V8',
+  arrowUpRight: 'M7 17L17 7M8 7h9v9',
   back: 'M15 18l-6-6 6-6',
   users:
     'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',

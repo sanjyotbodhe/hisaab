@@ -9,8 +9,6 @@ import '@fontsource/instrument-sans/400.css';
 import '@fontsource/instrument-sans/500.css';
 import '@fontsource/instrument-sans/600.css';
 import '@fontsource/instrument-sans/700.css';
-import '@fontsource/kalam/400.css';
-import '@fontsource/kalam/700.css';
 import './styles.css';
 
 // Hash URLs (/#/groups/…) keep deep links and page refreshes working on any static host,
