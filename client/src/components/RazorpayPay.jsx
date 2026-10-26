@@ -31,7 +31,7 @@ export default function RazorpayPay({ group, to, amount, onPaid }) {
         description: `${order.description}: pay ${to.name}`,
         prefill: order.prefill,
         notes: { group: group.name },
-        theme: { color: '#2a48c8' },
+        theme: { color: '#1f9d4f' },
         handler: async (resp) => {
           try {
             await api(`/groups/${group.id}/payments/verify`, {
