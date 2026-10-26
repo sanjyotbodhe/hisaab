@@ -8,11 +8,16 @@ import GroupPage from './pages/GroupPage.jsx';
 import JoinPage from './pages/JoinPage.jsx';
 
 function Boot() {
-  const { status, slow, retry } = useAuth();
+  const { status, slow, retry, bootError } = useAuth();
   if (status === 'offline') {
+    // status 0 = no response at all (network); otherwise show what the server said.
+    const message =
+      !bootError || bootError.status === 0
+        ? "Can't reach Hisaab right now. Check your connection."
+        : `Hisaab is having trouble: ${bootError.message}`;
     return (
       <div className="boot">
-        <ErrorState error={{ message: "Can't reach Hisaab right now. Check your connection." }} onRetry={retry} />
+        <ErrorState error={{ message }} onRetry={retry} />
       </div>
     );
   }
