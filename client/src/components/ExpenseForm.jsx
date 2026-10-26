@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { computeSplits, distribute, SplitError } from '@shared/split.js';
 import { api, newRequestId } from '../lib/api.js';
 import { CATEGORIES, formatINR, fromPaise, toPaise, todayYMD } from '../lib/format.js';
+import { CategoryIcon } from './icons.jsx';
 import { Button, Field, FormError } from './ui.jsx';
 
 const SPLIT_LABELS = {
@@ -30,7 +31,7 @@ function prefillValues(type, ids, amountPaise) {
   return out;
 }
 
-function initialState(source, group, me) {
+function initialState(source, group, me, mode) {
   if (source) {
     const people = source.splits ?? source.participants;
     const values = {};
@@ -53,7 +54,7 @@ function initialState(source, group, me) {
     description: '',
     amount: '',
     date: todayYMD(),
-    category: 'food',
+    category: mode === 'recurring' ? 'rent' : 'food',
     paidBy: me.id,
     splitType: 'equal',
     selected: new Set(group.members.map((m) => m.id)),
@@ -69,7 +70,7 @@ function initialState(source, group, me) {
  * `expense` is passed when editing.
  */
 export default function ExpenseForm({ group, me, expense, mode = 'expense', onSaved, onCancel, onDelete }) {
-  const [f, setF] = useState(() => initialState(expense, group, me));
+  const [f, setF] = useState(() => initialState(expense, group, me, mode));
   const [version, setVersion] = useState(expense?.version ?? 0);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState(null);
@@ -136,7 +137,7 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
   }
 
   function loadLatest() {
-    setF(initialState(conflict, group, me));
+    setF(initialState(conflict, group, me, mode));
     setVersion(conflict.version);
     setConflict(null);
     setFormError(null);
@@ -225,7 +226,7 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
         </Field>
       </div>
 
-      <div className="row-3">
+      <div className={mode === 'recurring' ? 'row-3' : 'row-even'}>
         <Field label="Paid by" htmlFor="ex-paid" error={errors.paidBy}>
           <select id="ex-paid" value={f.paidBy} onChange={(e) => set({ paidBy: e.target.value })}>
             {people.map((p) => (
@@ -254,39 +255,36 @@ export default function ExpenseForm({ group, me, expense, mode = 'expense', onSa
             </Field>
           </>
         ) : (
-          <>
-            <Field label="Date" htmlFor="ex-date" error={errors.date}>
-              <input
-                id="ex-date"
-                type="date"
-                value={f.date}
-                max={todayYMD()}
-                onChange={(e) => set({ date: e.target.value })}
-              />
-            </Field>
-            <Field label="Category" htmlFor="ex-cat">
-              <select id="ex-cat" value={f.category} onChange={(e) => set({ category: e.target.value })}>
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </>
+          <Field label="Date" htmlFor="ex-date" error={errors.date}>
+            <input
+              id="ex-date"
+              type="date"
+              value={f.date}
+              max={todayYMD()}
+              onChange={(e) => set({ date: e.target.value })}
+            />
+          </Field>
         )}
       </div>
-      {mode === 'recurring' && (
-        <Field label="Category" htmlFor="ex-cat-r">
-          <select id="ex-cat-r" value={f.category} onChange={(e) => set({ category: e.target.value })}>
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </Field>
-      )}
+
+      <fieldset className="chips-field">
+        <legend>Category</legend>
+        <div className="chips" role="radiogroup" aria-label="Category">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              role="radio"
+              aria-checked={f.category === c.value}
+              className={`chip${f.category === c.value ? ' on' : ''}`}
+              onClick={() => set({ category: c.value })}
+            >
+              <CategoryIcon category={c.value} size="sm" />
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
 
       <fieldset className="split">
         <legend>Split</legend>

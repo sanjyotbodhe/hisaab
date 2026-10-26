@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api.js';
-import { CATEGORIES, categoryLabel, formatDate, formatINR } from '../../lib/format.js';
+import { CATEGORIES, categoryLabel, formatINR } from '../../lib/format.js';
+import { CategoryIcon, Icon } from '../icons.jsx';
 import { Button, Empty, ErrorState, Loading } from '../ui.jsx';
 
 const PAGE_SIZE = 20;
@@ -14,14 +15,30 @@ function useDebounced(value, ms) {
   return v;
 }
 
-/** What this expense means for me, in one line. */
+/** What this expense means for me: label + amount + tone. */
 function myLine(e, meId) {
   const mine = e.splits.find((s) => s.user.id === meId)?.amount ?? 0;
   if (e.paidBy.id === meId) {
     const lent = e.amount - mine;
-    return lent > 0 ? { text: `you lent ${formatINR(lent)}`, tone: 'pos' } : { text: 'just you', tone: '' };
+    return lent > 0 ? { label: 'you lent', amount: lent, tone: 'pos' } : { label: 'only you', amount: null, tone: '' };
   }
-  return mine > 0 ? { text: `you owe ${formatINR(mine)}`, tone: 'neg' } : { text: 'not involved', tone: 'muted' };
+  return mine > 0
+    ? { label: 'you owe', amount: mine, tone: 'neg' }
+    : { label: 'not involved', amount: null, tone: 'muted' };
+}
+
+const monthFmt = new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const monShort = new Intl.DateTimeFormat('en-IN', { month: 'short', timeZone: 'UTC' });
+
+/** [{ month: 'October 2026', items: [...] }] keeping the server's date order. */
+function byMonth(items) {
+  const out = [];
+  for (const e of items) {
+    const label = monthFmt.format(new Date(`${e.date}T00:00:00Z`));
+    if (out.at(-1)?.month !== label) out.push({ month: label, items: [] });
+    out.at(-1).items.push(e);
+  }
+  return out;
 }
 
 export default function ExpensesTab({ group, me, version, onOpen, onAdd }) {
@@ -86,14 +103,17 @@ export default function ExpensesTab({ group, me, version, onOpen, onAdd }) {
   return (
     <div>
       <div className="filters">
-        <input
-          type="search"
-          className="filter-search"
-          placeholder="Search expenses"
-          aria-label="Search expenses"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+        <span className="filter-search-wrap">
+          <Icon name="search" size={16} />
+          <input
+            type="search"
+            className="filter-search"
+            placeholder="Search expenses"
+            aria-label="Search expenses"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </span>
         <select aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">All categories</option>
           {CATEGORIES.map((c) => (
@@ -132,7 +152,7 @@ export default function ExpensesTab({ group, me, version, onOpen, onAdd }) {
             : `${meta.total} expense${meta.total === 1 ? '' : 's'} · ${formatINR(meta.totalAmount)} total`}
         </span>
         <a className="btn btn-ghost btn-sm" href={`/api/groups/${group.id}/expenses/export.csv`} download>
-          Export CSV
+          <Icon name="download" size={15} /> Export CSV
         </a>
       </div>
 
@@ -157,31 +177,48 @@ export default function ExpensesTab({ group, me, version, onOpen, onAdd }) {
         ))}
 
       {items.length > 0 && (
-        <ul className={`expense-list${loading ? ' is-stale' : ''}`}>
-          {items.map((e) => {
-            const line = myLine(e, me.id);
-            return (
-              <li key={e.id}>
-                <button type="button" className="expense-row" onClick={() => onOpen(e.id)}>
-                  <span className="expense-date">{formatDate(e.date, true)}</span>
-                  <span className="expense-main">
-                    <span className="expense-desc">
-                      {e.description}
-                      {e.recurring && <span className="tag">recurring</span>}
-                    </span>
-                    <span className="muted small">
-                      {e.paidBy.id === me.id ? 'You' : e.paidBy.name} paid · {categoryLabel(e.category)}
-                    </span>
-                  </span>
-                  <span className="expense-amt">
-                    <span className="hand">{formatINR(e.amount)}</span>
-                    <span className={`small ${line.tone}`}>{line.text}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <div className={`expense-months${loading ? ' is-stale' : ''}`}>
+          {byMonth(items).map(({ month, items: monthItems }) => (
+            <section key={month} className="month">
+              <h3 className="month-label">{month}</h3>
+              <ul className="expense-list">
+                {monthItems.map((e) => {
+                  const line = myLine(e, me.id);
+                  const d = new Date(`${e.date}T00:00:00Z`);
+                  return (
+                    <li key={e.id}>
+                      <button type="button" className="expense-row" onClick={() => onOpen(e.id)}>
+                        <span className="date-chip" aria-label={e.date}>
+                          <span className="date-mon">{monShort.format(d)}</span>
+                          <span className="date-day">{d.getUTCDate()}</span>
+                        </span>
+                        <CategoryIcon category={e.category} />
+                        <span className="expense-main">
+                          <span className="expense-desc">
+                            {e.description}
+                            {e.recurring && (
+                              <span className="tag" title="Added by a recurring rule">
+                                <Icon name="repeat" size={11} /> recurring
+                              </span>
+                            )}
+                          </span>
+                          <span className="muted small">
+                            {e.paidBy.id === me.id ? 'You' : e.paidBy.name} paid {formatINR(e.amount)} ·{' '}
+                            {categoryLabel(e.category)}
+                          </span>
+                        </span>
+                        <span className={`expense-mine ${line.tone}`}>
+                          <span className="small">{line.label}</span>
+                          {line.amount !== null && <span className="hand">{formatINR(line.amount)}</span>}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
       {meta.hasMore && !loading && (
         <div className="center">

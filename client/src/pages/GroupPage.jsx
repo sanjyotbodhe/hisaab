@@ -7,19 +7,21 @@ import ExpensesTab from '../components/group/ExpensesTab.jsx';
 import MembersTab from '../components/group/MembersTab.jsx';
 import RecurringTab from '../components/group/RecurringTab.jsx';
 import SettleForm from '../components/SettleForm.jsx';
-import { Button, ErrorState, Loading, Modal, confirmAction } from '../components/ui.jsx';
+import { Icon } from '../components/icons.jsx';
+import { AvatarStack, Button, ErrorState, Loading, Modal, confirmAction } from '../components/ui.jsx';
 import { api } from '../lib/api.js';
 import { useAuth } from '../lib/auth.jsx';
 import { formatINR } from '../lib/format.js';
+import { useGroups } from '../lib/groups.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useResource } from '../lib/useResource.js';
 
 const TABS = [
-  { id: 'expenses', label: 'Expenses' },
-  { id: 'balances', label: 'Balances' },
-  { id: 'recurring', label: 'Recurring' },
-  { id: 'activity', label: 'Activity' },
-  { id: 'members', label: 'Members' },
+  { id: 'expenses', label: 'Expenses', icon: 'receipt' },
+  { id: 'balances', label: 'Balances', icon: 'scale' },
+  { id: 'recurring', label: 'Recurring', icon: 'repeat' },
+  { id: 'activity', label: 'Activity', icon: 'activity' },
+  { id: 'members', label: 'Members', icon: 'users' },
 ];
 
 /**
@@ -35,6 +37,7 @@ function GroupPage({ groupId }) {
   const { user } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const groups = useGroups();
   const [params, setParams] = useSearchParams();
   const tab = TABS.some((t) => t.id === params.get('tab')) ? params.get('tab') : 'expenses';
 
@@ -47,6 +50,7 @@ function GroupPage({ groupId }) {
   const changed = () => {
     setVersion((v) => v + 1);
     groupRes.reload();
+    groups.reload(); // sidebar + header balance
   };
 
   if (groupRes.loading && !groupRes.data) return <Loading text="Opening group…" />;
@@ -92,22 +96,39 @@ function GroupPage({ groupId }) {
   }
 
   const tabProps = { group, me: user, version, onChanged: changed };
+  const myBalance = groups.data?.groups.find((g) => g.id === group.id)?.myBalance;
 
   return (
     <div className="group-page">
       <header className="group-head">
-        <div>
+        <div className="group-head-main">
           <Link to="/" className="back">
-            Your groups
+            <Icon name="back" size={15} /> Overview
           </Link>
           <h1>{group.name}</h1>
-          {group.description && <p className="muted">{group.description}</p>}
+          <div className="group-meta">
+            <AvatarStack names={group.members.map((m) => m.name)} />
+            <span className="muted small">
+              {group.members.length} member{group.members.length === 1 ? '' : 's'}
+              {group.description ? ` · ${group.description}` : ''}
+            </span>
+          </div>
         </div>
-        <div className="group-actions">
-          <Button className="btn-secondary" onClick={() => setSettling({})} disabled={group.members.length < 2}>
-            Settle up
-          </Button>
-          <Button onClick={() => setAdding(true)}>Add expense</Button>
+        <div className="group-head-side">
+          {myBalance !== undefined && (
+            <div className={`my-position ${myBalance > 0 ? 'pos' : myBalance < 0 ? 'neg' : 'zero'}`}>
+              <span className="small">{myBalance > 0 ? 'You get back' : myBalance < 0 ? 'You owe' : 'You are'}</span>
+              <span className="hand">{myBalance === 0 ? 'settled up' : formatINR(Math.abs(myBalance))}</span>
+            </div>
+          )}
+          <div className="group-actions">
+            <Button className="btn-secondary" onClick={() => setSettling({})} disabled={group.members.length < 2}>
+              Settle up
+            </Button>
+            <Button onClick={() => setAdding(true)}>
+              <Icon name="plus" size={16} /> Add expense
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -120,6 +141,7 @@ function GroupPage({ groupId }) {
             aria-current={tab === t.id ? 'page' : undefined}
             onClick={() => setParams(t.id === 'expenses' ? {} : { tab: t.id }, { replace: true })}
           >
+            <Icon name={t.icon} size={16} />
             {t.label}
           </button>
         ))}
@@ -130,7 +152,15 @@ function GroupPage({ groupId }) {
         {tab === 'balances' && <BalancesTab {...tabProps} onSettle={(preset) => setSettling(preset)} />}
         {tab === 'recurring' && <RecurringTab {...tabProps} />}
         {tab === 'activity' && <ActivityTab {...tabProps} />}
-        {tab === 'members' && <MembersTab {...tabProps} onLeft={() => navigate('/', { replace: true })} />}
+        {tab === 'members' && (
+          <MembersTab
+            {...tabProps}
+            onLeft={() => {
+              groups.reload();
+              navigate('/', { replace: true });
+            }}
+          />
+        )}
       </section>
 
       <Modal open={adding} onClose={() => setAdding(false)} title="Add expense" wide>

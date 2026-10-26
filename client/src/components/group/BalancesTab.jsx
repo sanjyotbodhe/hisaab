@@ -3,6 +3,7 @@ import { api } from '../../lib/api.js';
 import { formatDate, formatINR } from '../../lib/format.js';
 import { useToast } from '../../lib/toast.jsx';
 import { useResource } from '../../lib/useResource.js';
+import { Icon } from '../icons.jsx';
 import { Avatar, Empty, ErrorState, Loading, confirmAction } from '../ui.jsx';
 
 export default function BalancesTab({ group, me, version, onChanged, onSettle }) {
@@ -23,6 +24,7 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
   const you = (p) => (p.id === me.id ? 'You' : p.name);
   const allSquare = balances.net.every((n) => n.amount === 0);
   const savedPayments = balances.pairwise.length - balances.simplified.length;
+  const maxAbs = Math.max(1, ...balances.net.map((n) => Math.abs(n.amount)));
 
   async function toggleSimplify() {
     setToggling(true);
@@ -52,18 +54,40 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
 
   return (
     <div className="balances">
-      <section className="ledger">
-        <h2>How to settle up</h2>
+      <section className="ledger settle-card">
+        <div className="settle-head">
+          <h2>How to settle up</h2>
+          {isAdmin && (
+            <label className="switch">
+              <input type="checkbox" checked={group.simplifyDebts} disabled={toggling} onChange={toggleSimplify} />
+              <span className="switch-track" aria-hidden="true" />
+              <span>Simplify debts</span>
+            </label>
+          )}
+        </div>
         {allSquare ? (
-          <p className="hand ledger-line pos">Everyone is settled up.</p>
+          <p className="all-square hand">
+            <Icon name="check" size={20} /> Everyone is settled up.
+          </p>
         ) : (
           <>
-            <ul className="settle-list">
+            <ul className="transfers">
               {balances.suggested.map((d) => (
-                <li key={`${d.from.id}-${d.to.id}`} className="ledger-line">
-                  <span className="hand">
-                    {you(d.from)} {d.from.id === me.id ? 'pay' : 'pays'} {d.to.id === me.id ? 'you' : d.to.name}{' '}
-                    <strong className="neg">{formatINR(d.amount)}</strong>
+                <li key={`${d.from.id}-${d.to.id}`} className="transfer">
+                  <span className="transfer-people">
+                    <span className="transfer-person">
+                      <Avatar name={d.from.name} size="sm" />
+                      <span>{you(d.from)}</span>
+                    </span>
+                    <span className="transfer-arrow">
+                      <span className="sr-only">pays</span>
+                      <span className="hand neg">{formatINR(d.amount)}</span>
+                      <Icon name="arrowRight" size={18} />
+                    </span>
+                    <span className="transfer-person">
+                      <Avatar name={d.to.name} size="sm" />
+                      <span>{you(d.to)}</span>
+                    </span>
                   </span>
                   {canRecord(d) && (
                     <button
@@ -80,34 +104,43 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
             <p className="muted small simplify-note">
               {group.simplifyDebts
                 ? savedPayments > 0
-                  ? `Simplified: ${balances.simplified.length} payment${balances.simplified.length === 1 ? '' : 's'} instead of ${balances.pairwise.length}. Money may pass through someone you didn't share an expense with, but everyone ends up exactly even.`
+                  ? `Simplified: ${balances.simplified.length} payment${balances.simplified.length === 1 ? '' : 's'} instead of ${balances.pairwise.length}. Everyone still ends up exactly even.`
                   : 'Simplified debts are on. This group is already as simple as it gets.'
-                : `Showing direct debts between people who shared expenses. Simplifying would need ${balances.simplified.length} payment${balances.simplified.length === 1 ? '' : 's'} instead of ${balances.pairwise.length}.`}
+                : `Showing direct debts only. Simplifying would need ${balances.simplified.length} payment${balances.simplified.length === 1 ? '' : 's'} instead of ${balances.pairwise.length}.`}
             </p>
           </>
-        )}
-        {isAdmin && (
-          <label className="switch">
-            <input type="checkbox" checked={group.simplifyDebts} disabled={toggling} onChange={toggleSimplify} />
-            <span>Simplify debts</span>
-          </label>
         )}
       </section>
 
       <section>
-        <h2>Balances</h2>
-        <ul className="net-list">
-          {balances.net.map((n) => (
-            <li key={n.user.id}>
-              <Avatar name={n.user.name} size="sm" />
-              <span className="net-name">{you(n.user)}</span>
-              <span className={`net-amt ${n.amount > 0 ? 'pos' : n.amount < 0 ? 'neg' : 'muted'}`}>
-                {n.amount === 0
-                  ? 'settled up'
-                  : `${n.amount > 0 ? 'gets back' : 'owes'} ${formatINR(Math.abs(n.amount))}`}
-              </span>
-            </li>
-          ))}
+        <h2>Who’s up, who’s down</h2>
+        <ul className="net-bars">
+          {balances.net.map((n) => {
+            const width = `${(Math.abs(n.amount) / maxAbs) * 50}%`;
+            const tone = n.amount > 0 ? 'pos' : n.amount < 0 ? 'neg' : 'zero';
+            return (
+              <li key={n.user.id} className="net-row">
+                <span className="net-who">
+                  <Avatar name={n.user.name} size="sm" />
+                  <span className="net-name">{you(n.user)}</span>
+                </span>
+                <span className="net-track" aria-hidden="true">
+                  <span className="net-axis" />
+                  {n.amount !== 0 && (
+                    <span
+                      className={`net-bar ${tone}`}
+                      style={n.amount > 0 ? { left: '50%', width } : { right: '50%', width }}
+                    />
+                  )}
+                </span>
+                <span className={`net-amt ${tone}`}>
+                  {n.amount === 0
+                    ? 'settled up'
+                    : `${n.amount > 0 ? 'gets back' : 'owes'} ${formatINR(Math.abs(n.amount))}`}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -115,28 +148,34 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
         <h2>Payments</h2>
         {settlements.length === 0 ? (
           <Empty title="No payments recorded yet">
-            When someone pays back, record it here so balances stay accurate.
+            When someone pays back by UPI or cash, record it here so balances stay accurate.
           </Empty>
         ) : (
           <ul className="payment-list">
             {settlements.map((s) => (
               <li key={s.id}>
-                <span className="expense-date">{formatDate(s.date, true)}</span>
+                <span className="payment-icon" aria-hidden="true">
+                  <Icon name="check" size={16} />
+                </span>
                 <span className="expense-main">
                   <span>
-                    {you(s.from)} paid {s.to.id === me.id ? 'you' : s.to.name}
+                    <strong>{you(s.from)}</strong> paid <strong>{s.to.id === me.id ? 'you' : s.to.name}</strong>
                   </span>
-                  {s.note && <span className="muted small">{s.note}</span>}
+                  <span className="muted small">
+                    {formatDate(s.date)}
+                    {s.note ? ` · ${s.note}` : ''}
+                  </span>
                 </span>
-                <span className="hand">{formatINR(s.amount)}</span>
+                <span className="hand pos">{formatINR(s.amount)}</span>
                 {(isAdmin || s.createdBy.id === me.id) && (
                   <button
                     type="button"
                     className="icon-btn"
                     aria-label="Remove payment"
+                    title="Remove payment"
                     onClick={() => removeSettlement(s)}
                   >
-                    ×
+                    <Icon name="close" size={16} />
                   </button>
                 )}
               </li>

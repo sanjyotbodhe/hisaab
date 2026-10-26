@@ -8,6 +8,16 @@ Repository: https://github.com/sanjyotbodhe/hisaab
 
 ---
 
+## Screenshots
+
+| Overview                                    | Balances and settle-up plan                          |
+| ------------------------------------------- | ---------------------------------------------------- |
+| ![Overview](docs/screenshots/dashboard.png) | ![Balances](docs/screenshots/balances.png)           |
+| **Expenses with search and filters**        | **Edit conflict detected**                           |
+| ![Expenses](docs/screenshots/expenses.png)  | ![Edit conflict](docs/screenshots/edit-conflict.png) |
+| **Sign up with validation**                 | **Mobile**                                           |
+| ![Sign up](docs/screenshots/sign-up.png)    | ![Mobile](docs/screenshots/mobile.png)               |
+
 ## Problem statement
 
 When a group shares money (four flatmates paying rent and groceries, eight friends on a Goa trip, a hostel wing ordering food) someone always ends up as the unofficial accountant. Expenses live in WhatsApp messages and UPI screenshots, splits aren't always equal ("I didn't have the drinks"), and at the end nobody knows who owes whom. Settling up turns into a mess of many small payments, often going in circles: A pays B, B pays C, C pays A.

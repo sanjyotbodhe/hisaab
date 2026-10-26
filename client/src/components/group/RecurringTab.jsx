@@ -4,6 +4,7 @@ import { categoryLabel, formatDate, formatINR } from '../../lib/format.js';
 import { useToast } from '../../lib/toast.jsx';
 import { useResource } from '../../lib/useResource.js';
 import ExpenseForm from '../ExpenseForm.jsx';
+import { CategoryIcon, Icon } from '../icons.jsx';
 import { Button, Empty, ErrorState, Loading, Modal, confirmAction } from '../ui.jsx';
 
 export default function RecurringTab({ group, me, version, onChanged }) {
@@ -61,6 +62,7 @@ export default function RecurringTab({ group, me, version, onChanged }) {
       <ul className="recurring-list">
         {rules.data.items.map((r) => (
           <li key={r.id} className={r.active ? '' : 'paused'}>
+            <CategoryIcon category={r.category} />
             <div className="recurring-main">
               <span className="expense-desc">{r.description}</span>
               <span className="muted small">
@@ -99,10 +101,10 @@ export default function RecurringTab({ group, me, version, onChanged }) {
   return (
     <div>
       <div className="section-head">
-        <p className="muted small">
-          Added automatically on their date. If the server was asleep, missed ones are caught up.
-        </p>
-        <Button onClick={() => setCreating(true)}>New recurring expense</Button>
+        <p className="muted small">Rent, Wi-Fi, the cook: added to the group automatically when due.</p>
+        <Button onClick={() => setCreating(true)}>
+          <Icon name="plus" size={16} /> New recurring expense
+        </Button>
       </div>
       {body}
       <Modal open={creating} onClose={() => setCreating(false)} title="New recurring expense" wide>
