@@ -18,9 +18,9 @@ export const config = {
   // Optional: lets an external scheduler call /api/cron/recurring (Authorization: Bearer <CRON_SECRET>).
   cronSecret: process.env.CRON_SECRET,
   // Razorpay (optional). Payments are enabled only when both keys are set.
-  razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? '',
-  razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET ?? '',
-  razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET ?? '',
+  razorpayKeyId: (process.env.RAZORPAY_KEY_ID ?? '').trim(),
+  razorpayKeySecret: (process.env.RAZORPAY_KEY_SECRET ?? '').trim(),
+  razorpayWebhookSecret: (process.env.RAZORPAY_WEBHOOK_SECRET ?? '').trim(),
   // Only overridden in automated tests, to point at a local mock of the Razorpay API.
   razorpayApiBase: process.env.RAZORPAY_API_BASE || 'https://api.razorpay.com',
 };

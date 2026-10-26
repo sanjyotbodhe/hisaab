@@ -13,8 +13,14 @@ import { formatINR } from '../shared/split.js';
 // Mounted at /api/groups/:groupId/payments after loadGroupMember.
 const router = Router({ mergeParams: true });
 
-const disabled = () =>
-  new AppError(503, 'PAYMENTS_DISABLED', 'Online payments are not set up for this app yet. Pay by UPI or cash.');
+const disabled = () => {
+  console.warn('[razorpay] payment attempted but RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are not set');
+  return new AppError(
+    503,
+    'PAYMENTS_DISABLED',
+    'Online payments aren’t switched on for this app yet. Pay by UPI or cash and use Record payment.',
+  );
+};
 
 // The key id is public by design (it goes into the browser); the secret never leaves the server.
 router.get('/config', (req, res) => {

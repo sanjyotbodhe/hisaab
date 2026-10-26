@@ -19,8 +19,6 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
     [group.id, version, group.simplifyDebts],
   );
   const [toggling, setToggling] = useState(false);
-  const payments = useResource(() => api(`/groups/${group.id}/payments/config`), [group.id]);
-  const onlineEnabled = payments.data?.enabled === true;
 
   if (data.loading && !data.data) return <Loading text="Working out balances…" />;
   if (data.error && !data.data) return <ErrorState error={data.error} onRetry={data.reload} />;
@@ -95,7 +93,7 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
                     </span>
                   </span>
                   <span className="transfer-actions">
-                    {d.from.id === me.id && onlineEnabled && (
+                    {d.from.id === me.id && (
                       <RazorpayPay group={group} to={d.to} amount={d.amount} onPaid={onChanged} />
                     )}
                     {d.from.id === me.id && upiOf(d.to.id) && (
