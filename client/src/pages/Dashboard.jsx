@@ -1,66 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Empty, ErrorState, Field, FormError, Loading, Modal, Money } from '../components/ui.jsx';
-import { api } from '../lib/api.js';
+import CreateGroupForm from '../components/CreateGroupForm.jsx';
+import { Icon } from '../components/icons.jsx';
+import { Button, Empty, ErrorState, Loading, Modal } from '../components/ui.jsx';
 import { useAuth } from '../lib/auth.jsx';
 import { formatINR, timeAgo } from '../lib/format.js';
+import { useGroups } from '../lib/groups.jsx';
 import { useToast } from '../lib/toast.jsx';
-import { useResource } from '../lib/useResource.js';
-
-function CreateGroupForm({ onCreated, onCancel }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [errors, setErrors] = useState({});
-  const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
-
-  async function submit(e) {
-    e.preventDefault();
-    if (!name.trim()) return setErrors({ name: 'Give the group a name' });
-    setBusy(true);
-    setErrors({});
-    setError(null);
-    try {
-      const { group } = await api('/groups', { method: 'POST', body: { name, description } });
-      onCreated(group);
-    } catch (err) {
-      setErrors(err.fieldErrors?.() ?? {});
-      setError(err);
-      setBusy(false);
-    }
-  }
-
-  return (
-    <form className="form" onSubmit={submit} noValidate>
-      <Field label="Group name" htmlFor="g-name" error={errors.name}>
-        <input
-          id="g-name"
-          value={name}
-          maxLength={60}
-          placeholder="e.g. Flat 302, Goa trip"
-          onChange={(e) => {
-            setName(e.target.value);
-            setErrors({});
-          }}
-          autoFocus
-        />
-      </Field>
-      <Field label="Description (optional)" htmlFor="g-desc" error={errors.description}>
-        <input id="g-desc" value={description} maxLength={200} onChange={(e) => setDescription(e.target.value)} />
-      </Field>
-      <FormError error={error} />
-      <div className="form-actions">
-        <span className="spacer" />
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Cancel
-        </button>
-        <Button type="submit" loading={busy}>
-          Create group
-        </Button>
-      </div>
-    </form>
-  );
-}
 
 /** Accepts a bare code or a full invite link pasted from chat. */
 function parseInvite(input) {
@@ -69,14 +15,35 @@ function parseInvite(input) {
   return (m ? m[1] : s).toUpperCase();
 }
 
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+
+function StatTile({ label, paise, tone, note }) {
+  return (
+    <div className={`stat stat-${tone}`}>
+      <span className="stat-label">{label}</span>
+      <span className="stat-value hand">{formatINR(paise)}</span>
+      {note && <span className="stat-note">{note}</span>}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const groups = useResource(() => api('/groups'), []);
+  const groups = useGroups();
   const [creating, setCreating] = useState(false);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState('');
+
+  // Refresh balances whenever the overview is opened (the sidebar keeps the list between pages).
+  useEffect(() => {
+    if (groups.data) groups.reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (groups.loading && !groups.data) return <Loading text="Loading your groups…" />;
   if (groups.error && !groups.data) return <ErrorState error={groups.error} onRetry={groups.reload} />;
@@ -84,6 +51,8 @@ export default function Dashboard() {
   const list = groups.data.groups;
   const owed = list.filter((g) => g.myBalance > 0).reduce((a, g) => a + g.myBalance, 0);
   const owe = list.filter((g) => g.myBalance < 0).reduce((a, g) => a - g.myBalance, 0);
+  const net = owed - owe;
+  const openGroups = list.filter((g) => g.myBalance !== 0).length;
 
   function joinByCode(e) {
     e.preventDefault();
@@ -94,56 +63,71 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-      <section className="summary">
-        <h1>Hi, {user.name.split(' ')[0]}</h1>
-        <div className="summary-lines">
-          <p className="ledger-line">
-            <span>You are owed</span>
-            <Money paise={owed} className={owed ? 'pos hand big' : 'hand big'} />
+      <header className="page-head">
+        <div>
+          <p className="eyebrow-date">
+            {new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())}
           </p>
-          <p className="ledger-line">
-            <span>You owe</span>
-            <Money paise={owe} className={owe ? 'neg hand big' : 'hand big'} />
-          </p>
+          <h1>
+            {greeting()}, {user.name.split(' ')[0]}
+          </h1>
         </div>
+        <Button onClick={() => setCreating(true)}>
+          <Icon name="plus" size={16} /> New group
+        </Button>
+      </header>
+
+      <section className="stats" aria-label="Your totals">
+        <StatTile label="You are owed" paise={owed} tone={owed ? 'pos' : 'zero'} />
+        <StatTile label="You owe" paise={owe} tone={owe ? 'neg' : 'zero'} />
+        <StatTile
+          label="Net position"
+          paise={Math.abs(net)}
+          tone={net > 0 ? 'pos' : net < 0 ? 'neg' : 'zero'}
+          note={
+            net === 0
+              ? 'All square everywhere'
+              : `${net > 0 ? 'Ahead' : 'Behind'} across ${openGroups} group${openGroups === 1 ? '' : 's'}`
+          }
+        />
       </section>
 
       <section>
         <div className="section-head">
           <h2>Your groups</h2>
-          <Button onClick={() => setCreating(true)}>New group</Button>
         </div>
         {list.length === 0 ? (
           <Empty
-            title="No groups yet"
+            title="Start your first group"
             action={
-              <Button onClick={() => setCreating(true)} className="btn-secondary">
-                Create your first group
+              <Button onClick={() => setCreating(true)}>
+                <Icon name="plus" size={16} /> Create a group
               </Button>
             }
           >
-            Make a group for your flat, a trip or a dinner club, then share the invite link with everyone in it.
+            One group per flat, trip or dinner club. Share its invite link and everyone adds what they paid.
           </Empty>
         ) : (
-          <ul className="group-list">
+          <ul className="group-grid">
             {list.map((g) => (
               <li key={g.id}>
-                <Link to={`/groups/${g.id}`} className="group-row">
-                  <span className="group-row-main">
-                    <span className="group-row-name">{g.name}</span>
-                    <span className="muted small">
-                      {g.memberCount} member{g.memberCount === 1 ? '' : 's'} · updated {timeAgo(g.updatedAt)}
+                <Link to={`/groups/${g.id}`} className="group-card">
+                  <span className="group-card-top">
+                    <span className="group-initial" aria-hidden="true">
+                      {g.name.trim()[0]?.toUpperCase()}
+                    </span>
+                    <span className="group-card-title">
+                      <span className="group-card-name">{g.name}</span>
+                      <span className="muted small">
+                        <Icon name="users" size={13} /> {g.memberCount} · {timeAgo(g.updatedAt)}
+                      </span>
                     </span>
                   </span>
-                  <span className={`group-row-bal ${g.myBalance > 0 ? 'pos' : g.myBalance < 0 ? 'neg' : ''}`}>
-                    {g.myBalance === 0 ? (
-                      <span className="muted">settled up</span>
-                    ) : (
-                      <>
-                        <span className="small">{g.myBalance > 0 ? 'you get back' : 'you owe'}</span>
-                        <span className="hand">{formatINR(Math.abs(g.myBalance))}</span>
-                      </>
-                    )}
+                  <span className={`group-card-bal ${g.myBalance > 0 ? 'pos' : g.myBalance < 0 ? 'neg' : 'zero'}`}>
+                    <span className="small">
+                      {g.myBalance > 0 ? 'you get back' : g.myBalance < 0 ? 'you owe' : 'settled up'}
+                    </span>
+                    {g.myBalance !== 0 && <span className="hand">{formatINR(Math.abs(g.myBalance))}</span>}
                   </span>
                 </Link>
               </li>
@@ -152,12 +136,15 @@ export default function Dashboard() {
         )}
       </section>
 
-      <section className="join-box">
-        <h2>Got an invite?</h2>
+      <section className="join-card">
+        <div>
+          <h2>Got an invite?</h2>
+          <p className="muted small">Paste the link a friend sent you, or just the code.</p>
+        </div>
         <form onSubmit={joinByCode} className="inline-form" noValidate>
           <input
             aria-label="Invite link or code"
-            placeholder="Paste invite link or code"
+            placeholder="https://…/#/join/ABCD234XYZ"
             value={code}
             onChange={(e) => {
               setCode(e.target.value);
@@ -176,8 +163,9 @@ export default function Dashboard() {
           onCancel={() => setCreating(false)}
           onCreated={(g) => {
             setCreating(false);
-            toast.success('Group created. Share the invite link from the Members tab.');
-            navigate(`/groups/${g.id}`);
+            groups.reload();
+            toast.success('Group created. Invite people from the Members tab.');
+            navigate(`/groups/${g.id}?tab=members`);
           }}
         />
       </Modal>

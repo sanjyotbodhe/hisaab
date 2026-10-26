@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { formatINR, initials } from '../lib/format.js';
+import { Icon } from './icons.jsx';
 
 export function Spinner({ label = 'Loading' }) {
   return <span className="spinner" role="status" aria-label={label} />;
@@ -97,6 +98,20 @@ export function Avatar({ name, size = 'md' }) {
   );
 }
 
+/** Overlapping avatars for a group's members, with a "+N" for the rest. */
+export function AvatarStack({ names, max = 4 }) {
+  const shown = names.slice(0, max);
+  const rest = names.length - shown.length;
+  return (
+    <span className="avatar-stack" aria-label={names.join(', ')}>
+      {shown.map((n, i) => (
+        <Avatar key={`${n}-${i}`} name={n} size="sm" />
+      ))}
+      {rest > 0 && <span className="avatar avatar-sm avatar-more">+{rest}</span>}
+    </span>
+  );
+}
+
 /** Accessible modal built on the native <dialog> (focus trap + Esc for free). */
 export function Modal({ open, onClose, title, children, wide = false }) {
   const ref = useRef(null);
@@ -124,7 +139,7 @@ export function Modal({ open, onClose, title, children, wide = false }) {
           <header className="modal-head">
             <h2 id="modal-title">{title}</h2>
             <button type="button" className="icon-btn" aria-label="Close" onClick={onClose}>
-              ×
+              <Icon name="close" size={18} />
             </button>
           </header>
           {children}

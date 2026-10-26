@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, ErrorState, FormError, Loading } from '../components/ui.jsx';
 import { api } from '../lib/api.js';
+import { useGroups } from '../lib/groups.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useResource } from '../lib/useResource.js';
 
@@ -9,6 +10,7 @@ export default function JoinPage() {
   const { code } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const groups = useGroups();
   const invite = useResource(() => api(`/invites/${encodeURIComponent(code)}`), [code]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -19,6 +21,7 @@ export default function JoinPage() {
     try {
       const res = await api(`/invites/${encodeURIComponent(code)}/join`, { method: 'POST' });
       toast.success(res.joined ? 'You joined the group' : 'You are already in this group');
+      groups.reload();
       navigate(`/groups/${res.groupId}`, { replace: true });
     } catch (err) {
       setError(err);
