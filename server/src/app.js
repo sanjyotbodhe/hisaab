@@ -15,6 +15,7 @@ import { loadGroupMember } from './middleware/group.js';
 import authRoutes from './routes/auth.js';
 import cronRoutes from './routes/cron.js';
 import expenseRoutes from './routes/expenses.js';
+import meRoutes from './routes/me.js';
 import groupRoutes from './routes/groups.js';
 import inviteRoutes from './routes/invites.js';
 import recurringRoutes from './routes/recurring.js';
@@ -111,6 +112,7 @@ export function createApp({ connect } = {}) {
   app.use('/api/groups/:groupId/bookings', requireAuth, loadGroupMember, bookingRoutes);
   app.use('/api/places', requireAuth, placesRoutes);
   app.use('/api/groups/:groupId/payments', requireAuth, loadGroupMember, paymentRoutes);
+  app.use('/api/me', requireAuth, meRoutes);
   app.use('/api/groups', requireAuth, groupRoutes);
   app.use('/api', notFoundHandler);
 

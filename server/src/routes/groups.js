@@ -11,6 +11,7 @@ import { Expense } from '../models/Expense.js';
 import { Activity } from '../models/Activity.js';
 import { RecurringExpense } from '../models/RecurringExpense.js';
 import { processDueRecurring } from '../services/recurring.js';
+import { monthlyTotals } from '../services/overview.js';
 import { AppError, conflict, forbidden, notFound } from '../utils/errors.js';
 import { formatINR } from '../shared/split.js';
 
@@ -220,7 +221,7 @@ router.put('/:groupId/trip', loadGroupMember, validate({ body: tripSchema }), as
 /** Where the money went: totals by category and by payer, against the trip budget. */
 router.get('/:groupId/summary', loadGroupMember, async (req, res) => {
   const match = { group: req.group._id, deletedAt: null };
-  const [byCategory, byPayer, mine] = await Promise.all([
+  const [byCategory, byPayer, mine, byMonth] = await Promise.all([
     Expense.aggregate([
       { $match: match },
       { $group: { _id: '$category', amount: { $sum: '$amount' }, count: { $sum: 1 } } },
@@ -232,6 +233,7 @@ router.get('/:groupId/summary', loadGroupMember, async (req, res) => {
       { $match: { 'splits.user': req.user._id } },
       { $group: { _id: null, amount: { $sum: '$splits.amount' } } },
     ]),
+    monthlyTotals({ match: { group: req.group._id } }),
   ]);
   const names = await nameMap(byPayer.map((p) => p._id));
   const total = byCategory.reduce((a, c) => a + c.amount, 0);
@@ -248,6 +250,7 @@ router.get('/:groupId/summary', loadGroupMember, async (req, res) => {
         amount: p.amount,
       }))
       .sort((a, b) => b.amount - a.amount),
+    byMonth,
   });
 });
 
