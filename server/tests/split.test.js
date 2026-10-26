@@ -13,15 +13,23 @@ describe('toPaise', () => {
     assert.equal(toPaise(12.5), 1250);
   });
   it('rejects invalid amounts', () => {
-    for (const bad of ['', 'abc', '-5', '1.234', '1e3', null, undefined]) assert.ok(Number.isNaN(toPaise(bad)), String(bad));
+    for (const bad of ['', 'abc', '-5', '1.234', '1e3', null, undefined])
+      assert.ok(Number.isNaN(toPaise(bad)), String(bad));
   });
 });
 
 describe('distribute', () => {
   it('always adds up to the total', () => {
     for (let total = 1; total < 500; total += 7) {
-      for (const weights of [[1, 1, 1], [3, 1], [1, 2, 3, 4, 5, 6, 7]]) {
-        assert.equal(distribute(total, weights).reduce((a, b) => a + b, 0), total);
+      for (const weights of [
+        [1, 1, 1],
+        [3, 1],
+        [1, 2, 3, 4, 5, 6, 7],
+      ]) {
+        assert.equal(
+          distribute(total, weights).reduce((a, b) => a + b, 0),
+          total,
+        );
       }
     }
   });
@@ -30,21 +38,54 @@ describe('distribute', () => {
 describe('computeSplits', () => {
   it('equal split gives the leftover paisa deterministically', () => {
     const rows = computeSplits(10000, 'equal', [{ user: 'a' }, { user: 'b' }, { user: 'c' }]);
-    assert.deepEqual(rows.map((r) => r.amount), [3334, 3333, 3333]);
+    assert.deepEqual(
+      rows.map((r) => r.amount),
+      [3334, 3333, 3333],
+    );
   });
   it('exact split must match the total', () => {
-    const rows = computeSplits(10000, 'exact', [{ user: 'a', value: '60' }, { user: 'b', value: '40' }]);
-    assert.deepEqual(rows.map((r) => r.amount), [6000, 4000]);
-    assert.throws(() => computeSplits(10000, 'exact', [{ user: 'a', value: '60' }, { user: 'b', value: '39.99' }]), SplitError);
+    const rows = computeSplits(10000, 'exact', [
+      { user: 'a', value: '60' },
+      { user: 'b', value: '40' },
+    ]);
+    assert.deepEqual(
+      rows.map((r) => r.amount),
+      [6000, 4000],
+    );
+    assert.throws(
+      () =>
+        computeSplits(10000, 'exact', [
+          { user: 'a', value: '60' },
+          { user: 'b', value: '39.99' },
+        ]),
+      SplitError,
+    );
   });
   it('percent split must add up to 100', () => {
-    const rows = computeSplits(99999, 'percent', [{ user: 'a', value: '50' }, { user: 'b', value: '25.5' }, { user: 'c', value: '24.5' }]);
+    const rows = computeSplits(99999, 'percent', [
+      { user: 'a', value: '50' },
+      { user: 'b', value: '25.5' },
+      { user: 'c', value: '24.5' },
+    ]);
     assert.equal(sum(rows), 99999);
-    assert.throws(() => computeSplits(1000, 'percent', [{ user: 'a', value: '50' }, { user: 'b', value: '49' }]), /100%/);
+    assert.throws(
+      () =>
+        computeSplits(1000, 'percent', [
+          { user: 'a', value: '50' },
+          { user: 'b', value: '49' },
+        ]),
+      /100%/,
+    );
   });
   it('shares split is proportional', () => {
-    const rows = computeSplits(90000, 'shares', [{ user: 'a', value: 2 }, { user: 'b', value: 1 }]);
-    assert.deepEqual(rows.map((r) => r.amount), [60000, 30000]);
+    const rows = computeSplits(90000, 'shares', [
+      { user: 'a', value: 2 },
+      { user: 'b', value: 1 },
+    ]);
+    assert.deepEqual(
+      rows.map((r) => r.amount),
+      [60000, 30000],
+    );
   });
   it('rejects duplicates, empty lists and bad amounts', () => {
     assert.throws(() => computeSplits(100, 'equal', []), SplitError);
@@ -74,7 +115,7 @@ describe('debt simplification', () => {
   it('settles every net balance exactly, with at most n-1 payments', () => {
     // Randomised property check.
     let seed = 42;
-    const rand = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+    const rand = () => (seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31;
     for (let round = 0; round < 200; round++) {
       const people = Array.from({ length: 2 + Math.floor(rand() * 7) }, (_, i) => `p${i}`);
       const debts = Array.from({ length: Math.floor(rand() * 15) }, () => ({

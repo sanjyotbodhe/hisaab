@@ -44,7 +44,11 @@ describe('auth', () => {
 
   it('rejects duplicate emails, weak passwords and wrong passwords', async () => {
     const c = await newUser('Dup');
-    const dup = await client().post('/api/auth/register', { name: 'X', email: c.email.toUpperCase(), password: 'password123' });
+    const dup = await client().post('/api/auth/register', {
+      name: 'X',
+      email: c.email.toUpperCase(),
+      password: 'password123',
+    });
     assert.equal(dup.status, 409);
     assert.equal(dup.body.error.code, 'EMAIL_TAKEN');
     const weak = await client().post('/api/auth/register', { name: 'X', email: 'weak@example.com', password: 'short' });
@@ -137,16 +141,25 @@ describe('expenses and balances', () => {
     const bad = await a.post(`/api/groups/${g.id}/expenses`, {
       ...expense(a.user.id, []),
       splitType: 'percent',
-      participants: [{ user: a.user.id, value: '50' }, { user: b.user.id, value: '40' }],
+      participants: [
+        { user: a.user.id, value: '50' },
+        { user: b.user.id, value: '40' },
+      ],
     });
     assert.equal(bad.status, 400);
     assert.equal(bad.body.error.code, 'INVALID_SPLIT');
     const notMember = await a.post(`/api/groups/${g.id}/expenses`, expense(a.user.id, [a.user.id, outsider.user.id]));
     assert.equal(notMember.status, 400);
     assert.equal(notMember.body.error.code, 'NOT_A_MEMBER');
-    const badAmount = await a.post(`/api/groups/${g.id}/expenses`, expense(a.user.id, [a.user.id], { amount: '12.345' }));
+    const badAmount = await a.post(
+      `/api/groups/${g.id}/expenses`,
+      expense(a.user.id, [a.user.id], { amount: '12.345' }),
+    );
     assert.equal(badAmount.status, 400);
-    const future = await a.post(`/api/groups/${g.id}/expenses`, expense(a.user.id, [a.user.id], { date: '2099-01-01' }));
+    const future = await a.post(
+      `/api/groups/${g.id}/expenses`,
+      expense(a.user.id, [a.user.id], { date: '2099-01-01' }),
+    );
     assert.equal(future.status, 400);
   });
 
@@ -165,7 +178,8 @@ describe('expenses and balances', () => {
     const a = await newUser('A');
     const b = await newUser('B');
     const g = await groupWith(a, b);
-    const created = (await a.post(`/api/groups/${g.id}/expenses`, expense(a.user.id, [a.user.id, b.user.id]))).body.expense;
+    const created = (await a.post(`/api/groups/${g.id}/expenses`, expense(a.user.id, [a.user.id, b.user.id]))).body
+      .expense;
     const base = { ...expense(a.user.id, [a.user.id, b.user.id]), version: created.version };
     const first = await a.put(`/api/groups/${g.id}/expenses/${created.id}`, { ...base, amount: '1000' });
     assert.equal(first.status, 200);
@@ -180,7 +194,8 @@ describe('expenses and balances', () => {
     const payer = await newUser('Payer');
     const other = await newUser('Other');
     const g = await groupWith(admin, payer, other);
-    const e = (await payer.post(`/api/groups/${g.id}/expenses`, expense(payer.user.id, [payer.user.id, other.user.id]))).body.expense;
+    const e = (await payer.post(`/api/groups/${g.id}/expenses`, expense(payer.user.id, [payer.user.id, other.user.id])))
+      .body.expense;
     assert.equal((await other.del(`/api/groups/${g.id}/expenses/${e.id}`)).status, 403);
     assert.equal((await admin.del(`/api/groups/${g.id}/expenses/${e.id}`)).status, 200);
     assert.equal((await admin.del(`/api/groups/${g.id}/expenses/${e.id}`)).status, 409);
@@ -193,9 +208,15 @@ describe('expenses and balances', () => {
     const b = await newUser('B');
     const g = await groupWith(a, b);
     for (let i = 0; i < 25; i++) {
-      await a.post(`/api/groups/${g.id}/expenses`, expense(a.user.id, [a.user.id], { description: `Chai ${i}`, amount: '10' }));
+      await a.post(
+        `/api/groups/${g.id}/expenses`,
+        expense(a.user.id, [a.user.id], { description: `Chai ${i}`, amount: '10' }),
+      );
     }
-    await a.post(`/api/groups/${g.id}/expenses`, expense(b.user.id, [b.user.id], { description: 'Taxi (airport)', category: 'travel' }));
+    await a.post(
+      `/api/groups/${g.id}/expenses`,
+      expense(b.user.id, [b.user.id], { description: 'Taxi (airport)', category: 'travel' }),
+    );
     const page1 = (await a.get(`/api/groups/${g.id}/expenses?limit=20`)).body;
     assert.equal(page1.items.length, 20);
     assert.equal(page1.total, 26);
@@ -232,12 +253,21 @@ describe('settling up and leaving', () => {
     assert.equal(blocked.body.error.code, 'UNSETTLED_BALANCE');
 
     const other = await newUser('Stranger');
-    const forbidden = await other.post(`/api/groups/${g.id}/settlements`, { from: b.user.id, to: a.user.id, amount: '250' });
+    const forbidden = await other.post(`/api/groups/${g.id}/settlements`, {
+      from: b.user.id,
+      to: a.user.id,
+      amount: '250',
+    });
     assert.equal(forbidden.status, 404);
     const same = await b.post(`/api/groups/${g.id}/settlements`, { from: b.user.id, to: b.user.id, amount: '250' });
     assert.equal(same.status, 400);
 
-    const paid = await b.post(`/api/groups/${g.id}/settlements`, { from: b.user.id, to: a.user.id, amount: '250', clientRequestId: randomUUID() });
+    const paid = await b.post(`/api/groups/${g.id}/settlements`, {
+      from: b.user.id,
+      to: a.user.id,
+      amount: '250',
+      clientRequestId: randomUUID(),
+    });
     assert.equal(paid.status, 201);
     const bal = (await a.get(`/api/groups/${g.id}/balances`)).body;
     assert.ok(bal.net.every((n) => n.amount === 0));

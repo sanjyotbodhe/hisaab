@@ -39,7 +39,12 @@ export function Empty({ title, children, action }) {
 
 export function Button({ loading, children, className = 'btn-primary', ...props }) {
   return (
-    <button className={`btn ${className}`} disabled={loading || props.disabled} aria-busy={loading || undefined} {...props}>
+    <button
+      className={`btn ${className}`}
+      disabled={loading || props.disabled}
+      aria-busy={loading || undefined}
+      {...props}
+    >
       {loading && <Spinner label="Working" />}
       <span>{children}</span>
     </button>
@@ -75,7 +80,9 @@ export function FormError({ error }) {
 export function Money({ paise, signed = false, hand = false, className = '' }) {
   const tone = !signed || paise === 0 ? '' : paise > 0 ? 'pos' : 'neg';
   return (
-    <span className={`money ${tone} ${hand ? 'hand' : ''} ${className}`}>{formatINR(signed ? Math.abs(paise) : paise)}</span>
+    <span className={`money ${tone} ${hand ? 'hand' : ''} ${className}`}>
+      {formatINR(signed ? Math.abs(paise) : paise)}
+    </span>
   );
 }
 

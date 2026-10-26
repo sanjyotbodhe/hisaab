@@ -62,7 +62,9 @@ router.post('/', validate({ body: createSchema }), async (req, res) => {
   if (body.clientRequestId) {
     const existing = await Settlement.findOne({ group: req.group._id, clientRequestId: body.clientRequestId }).lean();
     if (existing) {
-      return res.status(200).json({ settlement: serialize(existing, await nameMap(userIds(existing))), duplicate: true });
+      return res
+        .status(200)
+        .json({ settlement: serialize(existing, await nameMap(userIds(existing))), duplicate: true });
     }
   }
   let settlement;
@@ -80,7 +82,9 @@ router.post('/', validate({ body: createSchema }), async (req, res) => {
   } catch (err) {
     if (err?.code === 11000 && body.clientRequestId) {
       const existing = await Settlement.findOne({ group: req.group._id, clientRequestId: body.clientRequestId }).lean();
-      return res.status(200).json({ settlement: serialize(existing, await nameMap(userIds(existing))), duplicate: true });
+      return res
+        .status(200)
+        .json({ settlement: serialize(existing, await nameMap(userIds(existing))), duplicate: true });
     }
     throw err;
   }

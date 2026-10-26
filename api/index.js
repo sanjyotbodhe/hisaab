@@ -18,7 +18,14 @@ export default function handler(req, res) {
   if (configError) {
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: { code: 'MISCONFIGURED', message: 'The server is missing configuration. Check the environment variables.' } }));
+    res.end(
+      JSON.stringify({
+        error: {
+          code: 'MISCONFIGURED',
+          message: 'The server is missing configuration. Check the environment variables.',
+        },
+      }),
+    );
     return;
   }
   return app(req, res);

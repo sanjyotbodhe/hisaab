@@ -11,7 +11,8 @@ function describe(a, meId) {
     case 'group.created':
       return `${who} created the group`;
     case 'group.updated':
-      if (m.changes?.simplifyDebts !== undefined) return `${who} turned ${m.changes.simplifyDebts ? 'on' : 'off'} simplified debts`;
+      if (m.changes?.simplifyDebts !== undefined)
+        return `${who} turned ${m.changes.simplifyDebts ? 'on' : 'off'} simplified debts`;
       return `${who} updated the group details`;
     case 'member.joined':
       return `${who} joined the group`;

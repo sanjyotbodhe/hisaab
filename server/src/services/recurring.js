@@ -43,7 +43,11 @@ async function processRule(rule, today) {
     }
     let splits;
     try {
-      splits = computeSplits(rule.amount, rule.splitType, rule.participants.map((p) => ({ user: String(p.user), value: p.value })));
+      splits = computeSplits(
+        rule.amount,
+        rule.splitType,
+        rule.participants.map((p) => ({ user: String(p.user), value: p.value })),
+      );
     } catch (err) {
       if (err instanceof SplitError) {
         await autoPause(rule, `Split is no longer valid: ${err.message}`);

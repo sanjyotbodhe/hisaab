@@ -127,7 +127,9 @@ export default function ExpensesTab({ group, me, version, onOpen, onAdd }) {
 
       <div className="list-meta">
         <span className="muted small">
-          {loading ? 'Loading…' : `${meta.total} expense${meta.total === 1 ? '' : 's'} · ${formatINR(meta.totalAmount)} total`}
+          {loading
+            ? 'Loading…'
+            : `${meta.total} expense${meta.total === 1 ? '' : 's'} · ${formatINR(meta.totalAmount)} total`}
         </span>
         <a className="btn btn-ghost btn-sm" href={`/api/groups/${group.id}/expenses/export.csv`} download>
           Export CSV
@@ -136,9 +138,18 @@ export default function ExpensesTab({ group, me, version, onOpen, onAdd }) {
 
       {error && <ErrorState error={error} onRetry={() => load(1)} />}
       {!error && loading && items.length === 0 && <Loading text="Loading expenses…" />}
-      {!error && !loading && items.length === 0 &&
+      {!error &&
+        !loading &&
+        items.length === 0 &&
         (filtersActive ? (
-          <Empty title="No expenses match these filters" action={<button className="btn btn-secondary" onClick={clearFilters}>Clear filters</button>} />
+          <Empty
+            title="No expenses match these filters"
+            action={
+              <button className="btn btn-secondary" onClick={clearFilters}>
+                Clear filters
+              </button>
+            }
+          />
         ) : (
           <Empty title="No expenses yet" action={<Button onClick={onAdd}>Add the first expense</Button>}>
             Add what someone paid for and who it was for. Hisaab works out who owes whom.

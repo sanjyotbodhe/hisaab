@@ -18,7 +18,8 @@ function safeEqual(a, b) {
  */
 router.get('/recurring', async (req, res) => {
   const header = req.get('Authorization') || '';
-  if (!config.cronSecret || !safeEqual(header, `Bearer ${config.cronSecret}`)) throw unauthorized('Invalid cron secret');
+  if (!config.cronSecret || !safeEqual(header, `Bearer ${config.cronSecret}`))
+    throw unauthorized('Invalid cron secret');
   const created = await processDueRecurring();
   res.json({ ok: true, created });
 });

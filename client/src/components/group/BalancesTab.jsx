@@ -102,7 +102,9 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
               <Avatar name={n.user.name} size="sm" />
               <span className="net-name">{you(n.user)}</span>
               <span className={`net-amt ${n.amount > 0 ? 'pos' : n.amount < 0 ? 'neg' : 'muted'}`}>
-                {n.amount === 0 ? 'settled up' : `${n.amount > 0 ? 'gets back' : 'owes'} ${formatINR(Math.abs(n.amount))}`}
+                {n.amount === 0
+                  ? 'settled up'
+                  : `${n.amount > 0 ? 'gets back' : 'owes'} ${formatINR(Math.abs(n.amount))}`}
               </span>
             </li>
           ))}
@@ -112,7 +114,9 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
       <section>
         <h2>Payments</h2>
         {settlements.length === 0 ? (
-          <Empty title="No payments recorded yet">When someone pays back, record it here so balances stay accurate.</Empty>
+          <Empty title="No payments recorded yet">
+            When someone pays back, record it here so balances stay accurate.
+          </Empty>
         ) : (
           <ul className="payment-list">
             {settlements.map((s) => (
@@ -126,7 +130,12 @@ export default function BalancesTab({ group, me, version, onChanged, onSettle })
                 </span>
                 <span className="hand">{formatINR(s.amount)}</span>
                 {(isAdmin || s.createdBy.id === me.id) && (
-                  <button type="button" className="icon-btn" aria-label="Remove payment" onClick={() => removeSettlement(s)}>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    aria-label="Remove payment"
+                    onClick={() => removeSettlement(s)}
+                  >
                     ×
                   </button>
                 )}

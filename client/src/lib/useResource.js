@@ -26,6 +26,9 @@ export function useResource(loader, deps) {
     load();
   }, [load]);
 
-  const setData = useCallback((fn) => setState((s) => ({ ...s, data: typeof fn === 'function' ? fn(s.data) : fn })), []);
+  const setData = useCallback(
+    (fn) => setState((s) => ({ ...s, data: typeof fn === 'function' ? fn(s.data) : fn })),
+    [],
+  );
   return { ...state, reload: load, setData };
 }

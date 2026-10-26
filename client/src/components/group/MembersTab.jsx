@@ -77,13 +77,22 @@ export default function MembersTab({ group, me, onChanged, onLeft }) {
   }
 
   async function regenerate() {
-    if (!confirmAction('Reset the invite link? The old link will stop working for anyone who has not joined yet.')) return;
-    const res = await run('regen', () => api(`/groups/${group.id}/invite/regenerate`, { method: 'POST' }), 'New invite link created');
+    if (!confirmAction('Reset the invite link? The old link will stop working for anyone who has not joined yet.'))
+      return;
+    const res = await run(
+      'regen',
+      () => api(`/groups/${group.id}/invite/regenerate`, { method: 'POST' }),
+      'New invite link created',
+    );
     if (res) onChanged();
   }
 
   async function setRole(m, role) {
-    const res = await run(`role-${m.id}`, () => api(`/groups/${group.id}/members/${m.id}`, { method: 'PATCH', body: { role } }), `${m.name} is now ${role === 'admin' ? 'an admin' : 'a member'}`);
+    const res = await run(
+      `role-${m.id}`,
+      () => api(`/groups/${group.id}/members/${m.id}`, { method: 'PATCH', body: { role } }),
+      `${m.name} is now ${role === 'admin' ? 'an admin' : 'a member'}`,
+    );
     if (res) onChanged();
   }
 
@@ -91,7 +100,11 @@ export default function MembersTab({ group, me, onChanged, onLeft }) {
     const self = m.id === me.id;
     const question = self ? `Leave “${group.name}”?` : `Remove ${m.name} from “${group.name}”?`;
     if (!confirmAction(question)) return;
-    const res = await run(`rm-${m.id}`, () => api(`/groups/${group.id}/members/${m.id}`, { method: 'DELETE' }), self ? 'You left the group' : `${m.name} was removed`);
+    const res = await run(
+      `rm-${m.id}`,
+      () => api(`/groups/${group.id}/members/${m.id}`, { method: 'DELETE' }),
+      self ? 'You left the group' : `${m.name} was removed`,
+    );
     if (!res) return;
     if (self) onLeft();
     else onChanged();

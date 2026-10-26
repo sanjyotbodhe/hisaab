@@ -8,7 +8,9 @@ export default function Layout({ children }) {
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand" aria-label="Hisaab home">
-          <span className="brand-mark" aria-hidden="true">₹</span>
+          <span className="brand-mark" aria-hidden="true">
+            ₹
+          </span>
           <span className="brand-name">Hisaab</span>
         </Link>
         <div className="topbar-user">

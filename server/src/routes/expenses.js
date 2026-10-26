@@ -82,7 +82,12 @@ router.get('/', validate({ query: listQuery }), async (req, res) => {
 // CSV export of every (non-deleted) expense, one column per member's share.
 router.get('/export.csv', async (req, res) => {
   const expenses = await Expense.find({ group: req.group._id, deletedAt: null }).sort({ date: 1, createdAt: 1 }).lean();
-  const memberIds = [...new Set([...req.group.members.map((m) => String(m.user)), ...expenses.flatMap((e) => e.splits.map((s) => String(s.user)))])];
+  const memberIds = [
+    ...new Set([
+      ...req.group.members.map((m) => String(m.user)),
+      ...expenses.flatMap((e) => e.splits.map((s) => String(s.user))),
+    ]),
+  ];
   const names = await nameMap([...memberIds, ...expenses.map((e) => e.paidBy)]);
 
   // Quote every cell and neutralise spreadsheet formula injection (=, +, -, @).
@@ -91,7 +96,15 @@ router.get('/export.csv', async (req, res) => {
     if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     return `"${s.replace(/"/g, '""')}"`;
   };
-  const header = ['Date', 'Description', 'Category', 'Amount (INR)', 'Paid by', 'Split type', ...memberIds.map((id) => `${names.get(id) ?? 'Former member'} share`)];
+  const header = [
+    'Date',
+    'Description',
+    'Category',
+    'Amount (INR)',
+    'Paid by',
+    'Split type',
+    ...memberIds.map((id) => `${names.get(id) ?? 'Former member'} share`),
+  ];
   const rows = expenses.map((e) => {
     const shares = new Map(e.splits.map((s) => [String(s.user), s.amount]));
     return [
@@ -105,7 +118,11 @@ router.get('/export.csv', async (req, res) => {
     ];
   });
   const csv = [header, ...rows].map((r) => r.map(cell).join(',')).join('\r\n');
-  const safeName = req.group.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'group';
+  const safeName =
+    req.group.name
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'group';
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${safeName}-expenses.csv"`);
   res.send(`﻿${csv}`); // BOM so Excel reads ₹ and names correctly

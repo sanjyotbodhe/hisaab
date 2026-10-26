@@ -105,10 +105,7 @@ router.patch('/:groupId', loadGroupMember, requireGroupAdmin, validate({ body: g
 
 router.get('/:groupId/balances', loadGroupMember, async (req, res) => {
   const balances = await groupBalances(req.group);
-  const ids = [
-    ...balances.net.map((n) => n.user),
-    ...balances.pairwise.flatMap((d) => [d.from, d.to]),
-  ];
+  const ids = [...balances.net.map((n) => n.user), ...balances.pairwise.flatMap((d) => [d.from, d.to])];
   const names = await nameMap(ids);
   const person = (id) => ({ id, name: names.get(id) ?? 'Former member' });
   const debt = (d) => ({ from: person(d.from), to: person(d.to), amount: d.amount });
@@ -134,7 +131,10 @@ router.get(
     const { before, limit } = req.valid.query;
     const filter = { group: req.group._id, ...(before && { createdAt: { $lt: new Date(before) } }) };
     // Fetch one extra row to know whether there is another page.
-    const rows = await Activity.find(filter).sort({ createdAt: -1 }).limit(limit + 1).lean();
+    const rows = await Activity.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit + 1)
+      .lean();
     const page = rows.slice(0, limit);
     const names = await nameMap(page.filter((a) => a.actor).map((a) => a.actor));
     res.json({
@@ -161,7 +161,10 @@ router.patch(
   '/:groupId/members/:userId',
   loadGroupMember,
   requireGroupAdmin,
-  validate({ params: z.object({ groupId: objectId, userId: objectId }), body: z.object({ role: z.enum(['admin', 'member']) }) }),
+  validate({
+    params: z.object({ groupId: objectId, userId: objectId }),
+    body: z.object({ role: z.enum(['admin', 'member']) }),
+  }),
   async (req, res) => {
     const { userId } = req.valid.params;
     const { role } = req.valid.body;
@@ -213,10 +216,7 @@ router.delete(
       $or: [{ paidBy: userId }, { 'participants.user': userId }],
     });
     if (active) {
-      throw conflict(
-        'This person is part of an active recurring expense. Pause or edit it first.',
-        'IN_RECURRING',
-      );
+      throw conflict('This person is part of an active recurring expense. Pause or edit it first.', 'IN_RECURRING');
     }
 
     const remaining = req.group.members.filter((m) => String(m.user) !== userId);

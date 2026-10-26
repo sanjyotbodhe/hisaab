@@ -45,7 +45,14 @@ export default function RecurringTab({ group, me, version, onChanged }) {
   else if (rules.error && !rules.data) body = <ErrorState error={rules.error} onRetry={rules.reload} />;
   else if (rules.data.items.length === 0) {
     body = (
-      <Empty title="No recurring expenses" action={<Button className="btn-secondary" onClick={() => setCreating(true)}>Set one up</Button>}>
+      <Empty
+        title="No recurring expenses"
+        action={
+          <Button className="btn-secondary" onClick={() => setCreating(true)}>
+            Set one up
+          </Button>
+        }
+      >
         Rent, Wi-Fi, a maid or a cook: add it once and Hisaab adds it to the group on schedule.
       </Empty>
     );
@@ -57,8 +64,8 @@ export default function RecurringTab({ group, me, version, onChanged }) {
             <div className="recurring-main">
               <span className="expense-desc">{r.description}</span>
               <span className="muted small">
-                {formatINR(r.amount)} every {r.frequency === 'weekly' ? 'week' : 'month'} · {r.paidBy.id === me.id ? 'you pay' : `${r.paidBy.name} pays`} ·{' '}
-                {categoryLabel(r.category)}
+                {formatINR(r.amount)} every {r.frequency === 'weekly' ? 'week' : 'month'} ·{' '}
+                {r.paidBy.id === me.id ? 'you pay' : `${r.paidBy.name} pays`} · {categoryLabel(r.category)}
               </span>
               <span className="small">
                 {r.active ? (
@@ -73,7 +80,12 @@ export default function RecurringTab({ group, me, version, onChanged }) {
                 <Button className="btn-ghost btn-sm" loading={busyId === r.id} onClick={() => setActive(r, !r.active)}>
                   {r.active ? 'Pause' : 'Resume'}
                 </Button>
-                <button type="button" className="btn btn-danger-ghost btn-sm" disabled={busyId === r.id} onClick={() => remove(r)}>
+                <button
+                  type="button"
+                  className="btn btn-danger-ghost btn-sm"
+                  disabled={busyId === r.id}
+                  onClick={() => remove(r)}
+                >
                   Delete
                 </button>
               </div>
@@ -87,7 +99,9 @@ export default function RecurringTab({ group, me, version, onChanged }) {
   return (
     <div>
       <div className="section-head">
-        <p className="muted small">Added automatically on their date. If the server was asleep, missed ones are caught up.</p>
+        <p className="muted small">
+          Added automatically on their date. If the server was asleep, missed ones are caught up.
+        </p>
         <Button onClick={() => setCreating(true)}>New recurring expense</Button>
       </div>
       {body}

@@ -6,20 +6,18 @@ import { objectId } from '../middleware/validate.js';
 import { addDays, parseCalendarDate, todayCalendar } from '../utils/dates.js';
 import { AppError } from '../utils/errors.js';
 
-export const amountField = z
-  .union([z.string(), z.number()])
-  .transform((v, ctx) => {
-    const paise = toPaise(v);
-    if (Number.isNaN(paise) || paise <= 0) {
-      ctx.addIssue({ code: 'custom', message: 'Enter an amount greater than 0 with up to 2 decimals' });
-      return z.NEVER;
-    }
-    if (paise > MAX_AMOUNT_PAISE) {
-      ctx.addIssue({ code: 'custom', message: 'Amount is too large (max ₹1,00,00,000)' });
-      return z.NEVER;
-    }
-    return paise;
-  });
+export const amountField = z.union([z.string(), z.number()]).transform((v, ctx) => {
+  const paise = toPaise(v);
+  if (Number.isNaN(paise) || paise <= 0) {
+    ctx.addIssue({ code: 'custom', message: 'Enter an amount greater than 0 with up to 2 decimals' });
+    return z.NEVER;
+  }
+  if (paise > MAX_AMOUNT_PAISE) {
+    ctx.addIssue({ code: 'custom', message: 'Amount is too large (max ₹1,00,00,000)' });
+    return z.NEVER;
+  }
+  return paise;
+});
 
 export const calendarDateField = z.string().transform((v, ctx) => {
   const d = parseCalendarDate(v);
@@ -34,7 +32,10 @@ export const participantsField = z
   .array(
     z.object({
       user: objectId,
-      value: z.union([z.string().trim().max(20), z.number()]).nullable().optional(),
+      value: z
+        .union([z.string().trim().max(20), z.number()])
+        .nullable()
+        .optional(),
     }),
   )
   .min(1, 'Pick at least one person to split with')
@@ -74,7 +75,8 @@ export function checkExpenseRules(group, { paidBy, participants, date }) {
   if (date) {
     const today = todayCalendar();
     if (date > addDays(today, 1)) throw new AppError(400, 'BAD_DATE', 'Expense date cannot be in the future');
-    if (date < new Date(Date.UTC(2000, 0, 1))) throw new AppError(400, 'BAD_DATE', 'Expense date is too far in the past');
+    if (date < new Date(Date.UTC(2000, 0, 1)))
+      throw new AppError(400, 'BAD_DATE', 'Expense date is too far in the past');
   }
 }
 
@@ -85,9 +87,7 @@ export function buildSplits(amount, splitType, participants) {
 
 export function canModify(expenseLike, user, membership) {
   const uid = String(user._id);
-  return (
-    membership.role === 'admin' || String(expenseLike.createdBy) === uid || String(expenseLike.paidBy) === uid
-  );
+  return membership.role === 'admin' || String(expenseLike.createdBy) === uid || String(expenseLike.paidBy) === uid;
 }
 
 /** Resolve user ids to names, including people who have since left the group. */
@@ -106,7 +106,11 @@ export function serializeExpense(e, names) {
     amount: e.amount,
     paidBy: { id: String(e.paidBy), name: name(e.paidBy) },
     splitType: e.splitType,
-    splits: e.splits.map((s) => ({ user: { id: String(s.user), name: name(s.user) }, amount: s.amount, value: s.value })),
+    splits: e.splits.map((s) => ({
+      user: { id: String(s.user), name: name(s.user) },
+      amount: s.amount,
+      value: s.value,
+    })),
     category: e.category,
     date: e.date.toISOString().slice(0, 10),
     createdBy: { id: String(e.createdBy), name: name(e.createdBy) },

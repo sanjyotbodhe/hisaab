@@ -69,7 +69,10 @@ export default function GroupPage() {
   }
 
   async function deleteExpense(expense) {
-    if (!confirmAction(`Delete “${expense.description}” (${formatINR(expense.amount)})? Balances will be recalculated.`)) return;
+    if (
+      !confirmAction(`Delete “${expense.description}” (${formatINR(expense.amount)})? Balances will be recalculated.`)
+    )
+      return;
     try {
       await api(`/groups/${group.id}/expenses/${expense.id}`, { method: 'DELETE' });
       setEditing(null);

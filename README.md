@@ -31,16 +31,16 @@ Hisaab is a shared ledger for a group. Anyone in the group records what they pai
 
 ## Tech stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Frontend | React 18, React Router, Vite | Component-based UI with client-side routing; Vite for fast builds |
-| Backend | Node.js 22, Express 5 | Express 5 forwards async errors to one error handler |
-| Database | MongoDB (Atlas) with Mongoose | Groups embed members; expenses embed their splits; aggregations compute balances in the database |
-| Auth | JWT in an httpOnly, SameSite cookie; bcrypt | No token in JavaScript reach (XSS), cookie not sent cross-site (CSRF) |
-| Validation | Zod | Every request body / query / param is validated and normalised |
-| Security | Helmet (CSP), express-rate-limit, CSRF header check | Defence in depth |
-| Testing | Node's built-in test runner, Supertest, mongodb-memory-server | Real HTTP + real MongoDB in tests |
-| Hosting | Render (one web service) + MongoDB Atlas | API and React app on one origin: no CORS in production |
+| Layer      | Choice                                                        | Why                                                                                              |
+| ---------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Frontend   | React 18, React Router, Vite                                  | Component-based UI with client-side routing; Vite for fast builds                                |
+| Backend    | Node.js 22, Express 5                                         | Express 5 forwards async errors to one error handler                                             |
+| Database   | MongoDB (Atlas) with Mongoose                                 | Groups embed members; expenses embed their splits; aggregations compute balances in the database |
+| Auth       | JWT in an httpOnly, SameSite cookie; bcrypt                   | No token in JavaScript reach (XSS), cookie not sent cross-site (CSRF)                            |
+| Validation | Zod                                                           | Every request body / query / param is validated and normalised                                   |
+| Security   | Helmet (CSP), express-rate-limit, CSRF header check           | Defence in depth                                                                                 |
+| Testing    | Node's built-in test runner, Supertest, mongodb-memory-server | Real HTTP + real MongoDB in tests                                                                |
+| Hosting    | Render (one web service) + MongoDB Atlas                      | API and React app on one origin: no CORS in production                                           |
 
 ## Architecture
 
@@ -91,20 +91,20 @@ hisaab/
 
 ### Data model
 
-| Collection | Key fields | Notes |
-|---|---|---|
-| `users` | name, email (unique), passwordHash | hash never returned |
-| `groups` | name, members[{user, role, joinedAt}], inviteCode (unique), simplifyDebts | members embedded: always read together |
-| `expenses` | group, amount (paise), paidBy, splitType, splits[{user, amount, value}], category, date, deletedAt, clientRequestId, recurring, occurrenceKey | soft delete; unique partial indexes for idempotency and recurring de-duplication |
-| `settlements` | group, from, to, amount, date, deletedAt, clientRequestId | real-world payments |
-| `activities` | group, actor, type, meta, createdAt | append-only audit log |
-| `recurringexpenses` | group, amount, paidBy, participants, frequency, anchorDay, nextRunAt, active | drives the scheduler |
+| Collection          | Key fields                                                                                                                                    | Notes                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `users`             | name, email (unique), passwordHash                                                                                                            | hash never returned                                                              |
+| `groups`            | name, members[{user, role, joinedAt}], inviteCode (unique), simplifyDebts                                                                     | members embedded: always read together                                           |
+| `expenses`          | group, amount (paise), paidBy, splitType, splits[{user, amount, value}], category, date, deletedAt, clientRequestId, recurring, occurrenceKey | soft delete; unique partial indexes for idempotency and recurring de-duplication |
+| `settlements`       | group, from, to, amount, date, deletedAt, clientRequestId                                                                                     | real-world payments                                                              |
+| `activities`        | group, actor, type, meta, createdAt                                                                                                           | append-only audit log                                                            |
+| `recurringexpenses` | group, amount, paidBy, participants, frequency, anchorDay, nextRunAt, active                                                                  | drives the scheduler                                                             |
 
 ### Engineering decisions worth calling out
 
 - **Money is integer paise everywhere.** ₹100 split three ways is 3334 + 3333 + 3333 paise. The leftover paise are assigned with the largest-remainder method, so shares always add up to the exact total and the result is deterministic.
 - **One split engine, two places.** `shared/split.js` runs in the browser for the live preview and on the server as the source of truth, so the preview can never disagree with what gets saved.
-- **Debt simplification.** Net balances are matched greedily (largest debtor ↔ largest creditor). This always settles everyone exactly and uses at most *n − 1* payments. Finding the true minimum is NP-hard (it reduces to subset-sum), so greedy is the standard practical choice. The UI shows both views and how many payments simplification saves. A randomised property test checks the guarantees on 200 random groups.
+- **Debt simplification.** Net balances are matched greedily (largest debtor ↔ largest creditor). This always settles everyone exactly and uses at most _n − 1_ payments. Finding the true minimum is NP-hard (it reduces to subset-sum), so greedy is the standard practical choice. The UI shows both views and how many payments simplification saves. A randomised property test checks the guarantees on 200 random groups.
 - **Balances are computed, not stored.** Two MongoDB aggregations (`$unwind` splits → `$group` by pair) build the debt graph, so there is no running total that can drift out of sync after edits and deletes.
 - **Idempotent writes.** The client generates a UUID per form; a unique partial index on `(group, clientRequestId)` guarantees a double-click, a retry after a timeout, or two concurrent requests create exactly one expense / payment.
 - **Optimistic concurrency on edits.** An edit only applies if the expense's version is unchanged since it was opened (`findOneAndUpdate` with `__v` in the filter). Otherwise the API returns `409 EDIT_CONFLICT` with the latest version, and the UI offers to load it, so nobody silently overwrites someone else's change.
@@ -124,16 +124,16 @@ hisaab/
 
 ### Error handling (examples)
 
-| Situation | What happens |
-|---|---|
-| Split doesn't add up | `400 INVALID_SPLIT` with the exact difference; the form shows it before submitting |
-| Double-click / retried request | Same expense returned, `duplicate: true`, no second record |
-| Two people edit the same expense | `409 EDIT_CONFLICT` + latest version; "Load the latest version" button |
-| Leaving with a balance | `409 UNSETTLED_BALANCE` with the amount |
-| Expired session | `401`, client returns to login and back to the same page afterwards |
-| Server asleep / network down | "Waking up the server…" message, network errors with Retry buttons |
-| Database unreachable | `503 DB_UNAVAILABLE`; `/api/health` reports `degraded` |
-| Invalid / reset invite link | Clear message on the join page |
+| Situation                        | What happens                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| Split doesn't add up             | `400 INVALID_SPLIT` with the exact difference; the form shows it before submitting |
+| Double-click / retried request   | Same expense returned, `duplicate: true`, no second record                         |
+| Two people edit the same expense | `409 EDIT_CONFLICT` + latest version; "Load the latest version" button             |
+| Leaving with a balance           | `409 UNSETTLED_BALANCE` with the amount                                            |
+| Expired session                  | `401`, client returns to login and back to the same page afterwards                |
+| Server asleep / network down     | "Waking up the server…" message, network errors with Retry buttons                 |
+| Database unreachable             | `503 DB_UNAVAILABLE`; `/api/health` reports `degraded`                             |
+| Invalid / reset invite link      | Clear message on the join page                                                     |
 
 ## Local setup
 
@@ -172,16 +172,16 @@ npm test
 
 Set in `server/.env` locally, or in the hosting dashboard. Never commit real values.
 
-| Variable | Required | Description |
-|---|---|---|
-| `MONGODB_URI` | yes | MongoDB connection string, e.g. `mongodb+srv://user:pass@cluster.mongodb.net/hisaab` |
-| `JWT_SECRET` | yes | Long random string used to sign sessions (32+ characters in production) |
-| `NODE_ENV` | no | `development` (default) or `production` (secure cookies, no CORS) |
-| `PORT` | no | Port to listen on (default `4000`; Render sets it automatically) |
-| `CLIENT_ORIGIN` | no | Dev-only CORS origin (default `http://localhost:5173`) |
-| `RECURRING_INTERVAL_MINUTES` | no | How often the recurring job runs (default `10`) |
-| `APP_TZ_OFFSET_MINUTES` | no | Time zone used for "today" (default `330`, IST) |
-| `TEST_MONGODB_URI` | no | Use a real MongoDB for tests instead of the in-memory one |
+| Variable                     | Required | Description                                                                          |
+| ---------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `MONGODB_URI`                | yes      | MongoDB connection string, e.g. `mongodb+srv://user:pass@cluster.mongodb.net/hisaab` |
+| `JWT_SECRET`                 | yes      | Long random string used to sign sessions (32+ characters in production)              |
+| `NODE_ENV`                   | no       | `development` (default) or `production` (secure cookies, no CORS)                    |
+| `PORT`                       | no       | Port to listen on (default `4000`; Render sets it automatically)                     |
+| `CLIENT_ORIGIN`              | no       | Dev-only CORS origin (default `http://localhost:5173`)                               |
+| `RECURRING_INTERVAL_MINUTES` | no       | How often the recurring job runs (default `10`)                                      |
+| `APP_TZ_OFFSET_MINUTES`      | no       | Time zone used for "today" (default `330`, IST)                                      |
+| `TEST_MONGODB_URI`           | no       | Use a real MongoDB for tests instead of the in-memory one                            |
 
 ## Deployment
 

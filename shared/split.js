@@ -52,9 +52,7 @@ export function distribute(total, weights) {
   if (sumW <= 0) throw new SplitError('Weights must add up to more than zero');
   const parts = weights.map((w) => Math.floor((total * w) / sumW));
   let remainder = total - parts.reduce((a, b) => a + b, 0);
-  const order = weights
-    .map((w, i) => ({ i, frac: (total * w) % sumW }))
-    .sort((a, b) => b.frac - a.frac || a.i - b.i);
+  const order = weights.map((w, i) => ({ i, frac: (total * w) % sumW })).sort((a, b) => b.frac - a.frac || a.i - b.i);
   for (let k = 0; remainder > 0; k++, remainder--) parts[order[k].i] += 1;
   return parts;
 }
@@ -89,7 +87,10 @@ export function computeSplits(amount, splitType, participants) {
   }
 
   if (splitType === 'equal') {
-    const parts = distribute(amount, users.map(() => 1));
+    const parts = distribute(
+      amount,
+      users.map(() => 1),
+    );
     return users.map((user, i) => ({ user, amount: parts[i], value: null }));
   }
 
