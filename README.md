@@ -10,17 +10,17 @@ Repository: https://github.com/sanjyotbodhe/hisaab
 
 ## Screenshots
 
-| Overview                                        | Trip plan: itinerary, group votes, map, famous places |
-| ----------------------------------------------- | ----------------------------------------------------- |
-| ![Overview](docs/screenshots/dashboard.png)     | ![Trip plan](docs/screenshots/trip-plan.png)          |
-| **Balances and settle-up plan**                 | **Pay via UPI (QR on laptops, app link on phones)**   |
-| ![Balances](docs/screenshots/balances.png)      | ![UPI](docs/screenshots/upi.png)                      |
-| **Bookings vault**                              | **Expenses with search and filters**                  |
-| ![Bookings](docs/screenshots/bookings.png)      | ![Expenses](docs/screenshots/expenses.png)            |
-| **Paid online through Razorpay (verified)**     | **Edit conflict detected**                            |
-| ![Paid online](docs/screenshots/pay-online.png) | ![Edit conflict](docs/screenshots/edit-conflict.png)  |
-| **Mobile**                                      |                                                       |
-| ![Mobile](docs/screenshots/mobile.png)          |                                                       |
+| Overview: balance, insights carousel, spending, coming up | Trip plan: itinerary, group votes, map, famous places |
+| --------------------------------------------------------- | ----------------------------------------------------- |
+| ![Overview](docs/screenshots/dashboard.png)               | ![Trip plan](docs/screenshots/trip-plan.png)          |
+| **Balances and settle-up plan**                           | **Pay via UPI (QR on laptops, app link on phones)**   |
+| ![Balances](docs/screenshots/balances.png)                | ![UPI](docs/screenshots/upi.png)                      |
+| **Bookings vault**                                        | **Expenses with filters, and the group at a glance**  |
+| ![Bookings](docs/screenshots/bookings.png)                | ![Expenses](docs/screenshots/expenses.png)            |
+| **Paid online through Razorpay (verified)**               | **Edit conflict detected**                            |
+| ![Paid online](docs/screenshots/pay-online.png)           | ![Edit conflict](docs/screenshots/edit-conflict.png)  |
+| **Mobile**                                                | **Log in**                                            |
+| ![Mobile](docs/screenshots/mobile.png)                    | ![Log in](docs/screenshots/sign-up.png)               |
 
 ## Problem statement
 
@@ -48,6 +48,8 @@ For trips, the same group gets a shared plan: destination, dates and budget; a d
 4. **Plan the trip together.** Destination, dates and budget for the group. A day-by-day itinerary, an ideas list the group **votes** on before scheduling, and a **map** (OpenStreetMap) with numbered pins for the plan and the **famous places near the destination** (from Wikipedia, with photos), each addable in one tap. Every stop has a Google Maps directions link.
 5. **Bookings and budget.** Save flight / train / bus / stay / activity confirmations (PNR, times, cost, who paid) where the whole group can see them. **Add as expense** turns a booking into an equal split exactly once. "Find and book" links open Google Flights, Booking.com, IRCTC and redBus pre-filled with the trip's destination and dates. The budget tracker shows spent vs budget and a breakdown by category.
 
+**On top of the five workflows: your money at a glance.** The overview adds up _your share_ across every group (not just what you happened to pay): an insights carousel (this month vs last, top category, biggest expense, next trip or bill, who to settle with), six months of spending with a category breakdown, what's coming up in the next 45 days (trip dates, rent and other recurring bills) and the latest activity from all your groups. Each group shows the same at its own level: total, per person, monthly trend, where the money went and who paid.
+
 ## Tech stack
 
 | Layer      | Choice                                                         | Why                                                                                              |
@@ -74,8 +76,8 @@ flowchart LR
   subgraph Vercel project - one domain
     CL[client service<br/>Vite static build] -.serves.-> UI
     API[server service<br/>Express, index.js] --> MW[auth · CSRF · zod validation · group membership]
-    MW --> R[routes: auth, groups, invites, expenses, settlements,<br/>recurring, plan, bookings, places, payments]
-    R --> S[services: balances, recurring catch-up, activity, places, razorpay]
+    MW --> R[routes: auth, groups, invites, expenses, settlements,<br/>recurring, plan, bookings, places, payments, me]
+    R --> S[services: balances, overview, recurring catch-up,<br/>activity, places, razorpay]
     S -.uses.-> SH
   end
   S --> DB[(MongoDB Atlas<br/>incl. shared lookup cache)]
@@ -108,14 +110,16 @@ hisaab/
 │   │   │                   # PlanItem, Booking, Payment, ExternalCache
 │   │   ├── routes/         # HTTP layer: validation + authorization + responses
 │   │   ├── services/       # balances (aggregations), recurring job, activity log, places (cache + throttle),
-│   │   │                   # razorpay (orders, signature checks, exactly-once settlement)
+│   │   │                   # razorpay (orders, signature checks, exactly-once settlement),
+│   │   │                   # overview (cross-group insights for the dashboard)
 │   │   ├── middleware/     # auth, CSRF, validation, group membership, errors
 │   │   └── utils/          # errors, calendar dates
 │   └── tests/              # unit + API integration tests
 └── client/                 # "client" service (React + Vite)
     └── src/
         ├── pages/          # Auth, Dashboard, Group, Join
-        ├── components/     # ExpenseForm, SettleForm, TripMap, PlaceSearch, UpiPay, RazorpayPay, group tabs, UI kit
+        ├── components/     # ExpenseForm, SettleForm, TripMap, PlaceSearch, UpiPay, RazorpayPay,
+        │                   # dashboard panels (insights carousel, charts), group tabs, UI kit
         └── lib/            # API client, auth context, toasts, formatting
 ```
 
@@ -140,6 +144,7 @@ hisaab/
 - **One split engine, two places.** `server/src/shared/split.js` runs in the browser for the live preview and on the server as the source of truth, so the preview can never disagree with what gets saved.
 - **Debt simplification.** Net balances are matched greedily (largest debtor ↔ largest creditor). This always settles everyone exactly and uses at most _n − 1_ payments. Finding the true minimum is NP-hard (it reduces to subset-sum), so greedy is the standard practical choice. The UI shows both views and how many payments simplification saves. A randomised property test checks the guarantees on 200 random groups.
 - **Balances are computed, not stored.** Two MongoDB aggregations (`$unwind` splits → `$group` by pair) build the debt graph, so there is no running total that can drift out of sync after edits and deletes.
+- **Insights are computed the same way.** `GET /api/me/overview` runs aggregations over the user's own splits (their share, not what they paid) across all their groups: six months by calendar month with empty months filled in, this month by category, the biggest expense, active recurring rules and trips in the next 45 days, and the latest activity. Due recurring expenses are caught up first, so "this month" is never stale, and the dashboard reloads it whenever balances change.
 - **Idempotent writes.** The client generates a UUID per form; a unique partial index on `(group, clientRequestId)` guarantees a double-click, a retry after a timeout, or two concurrent requests create exactly one expense / payment.
 - **Optimistic concurrency on edits.** An edit only applies if the expense's version is unchanged since it was opened (`findOneAndUpdate` with `__v` in the filter). Otherwise the API returns `409 EDIT_CONFLICT` with the latest version, and the UI offers to load it, so nobody silently overwrites someone else's change.
 - **Atomic invite joins and role changes** with conditional updates (`members.user: {$ne: me}`), so double-clicking Join can't add someone twice.
@@ -212,7 +217,7 @@ npm start            # set NODE_ENV=production in server/.env for secure cookies
 **Tests** (a throwaway in-memory MongoDB is downloaded and started automatically):
 
 ```bash
-npm test             # 50 unit + API integration tests
+npm test             # 53 unit + API integration tests
 npm run format:check # Prettier
 ```
 
