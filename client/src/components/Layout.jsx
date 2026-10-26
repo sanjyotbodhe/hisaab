@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { formatINR } from '../lib/format.js';
-import { GroupsProvider, useGroups } from '../lib/groups.jsx';
+import { GroupsProvider, useGroups, useOverview } from '../lib/groups.jsx';
 import { useToast } from '../lib/toast.jsx';
 import CreateGroupForm from './CreateGroupForm.jsx';
+import { SideMonthCard } from './dashboard/Panels.jsx';
 import ProfileForm from './ProfileForm.jsx';
 import { Icon } from './icons.jsx';
 import { Avatar, Modal } from './ui.jsx';
@@ -23,6 +24,7 @@ function Brand() {
 function Sidebar({ onNewGroup, onProfile }) {
   const { user, logout } = useAuth();
   const groups = useGroups();
+  const overview = useOverview();
   const list = groups.data?.groups ?? [];
 
   return (
@@ -62,6 +64,8 @@ function Sidebar({ onNewGroup, onProfile }) {
           ))}
         </ul>
       </div>
+
+      {overview.data && groups.data?.groups.length > 0 && <SideMonthCard overview={overview.data} />}
 
       <div className="side-user">
         <button type="button" className="side-profile" onClick={onProfile} title="Profile and UPI ID">
