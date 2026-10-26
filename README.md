@@ -1,6 +1,6 @@
 # Hisaab
 
-**Shared expenses for flatmates, trips and friends, with the fewest payments to settle up.**
+**One place for a group's shared money and trips: split expenses, plan the trip together, keep bookings, and settle up with the fewest payments (pay by UPI in one tap).**
 
 Live app: **https://YOUR-APP.vercel.app**
 Demo video: **YOUR-VIDEO-LINK**
@@ -10,17 +10,21 @@ Repository: https://github.com/sanjyotbodhe/hisaab
 
 ## Screenshots
 
-| Overview                                    | Balances and settle-up plan                          |
-| ------------------------------------------- | ---------------------------------------------------- |
-| ![Overview](docs/screenshots/dashboard.png) | ![Balances](docs/screenshots/balances.png)           |
-| **Expenses with search and filters**        | **Edit conflict detected**                           |
-| ![Expenses](docs/screenshots/expenses.png)  | ![Edit conflict](docs/screenshots/edit-conflict.png) |
-| **Sign up with validation**                 | **Mobile**                                           |
-| ![Sign up](docs/screenshots/sign-up.png)    | ![Mobile](docs/screenshots/mobile.png)               |
+| Overview                                             | Trip plan: itinerary, group votes, map, famous places |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| ![Overview](docs/screenshots/dashboard.png)          | ![Trip plan](docs/screenshots/trip-plan.png)          |
+| **Balances and settle-up plan**                      | **Pay via UPI (QR on laptops, app link on phones)**   |
+| ![Balances](docs/screenshots/balances.png)           | ![UPI](docs/screenshots/upi.png)                      |
+| **Bookings vault**                                   | **Expenses with search and filters**                  |
+| ![Bookings](docs/screenshots/bookings.png)           | ![Expenses](docs/screenshots/expenses.png)            |
+| **Edit conflict detected**                           | **Mobile**                                            |
+| ![Edit conflict](docs/screenshots/edit-conflict.png) | ![Mobile](docs/screenshots/mobile.png)                |
 
 ## Problem statement
 
 When a group shares money (four flatmates paying rent and groceries, eight friends on a Goa trip, a hostel wing ordering food) someone always ends up as the unofficial accountant. Expenses live in WhatsApp messages and UPI screenshots, splits aren't always equal ("I didn't have the drinks"), and at the end nobody knows who owes whom. Settling up turns into a mess of many small payments, often going in circles: A pays B, B pays C, C pays A.
+
+Trips make it worse. The plan is scattered across a WhatsApp poll, a Google Doc and someone's Maps list; the flight PNR and hotel confirmation are buried in one person's inbox; nobody knows how much of the budget is gone; and paying someone back means asking for their UPI ID again.
 
 ## Target users
 
@@ -32,19 +36,21 @@ When a group shares money (four flatmates paying rent and groceries, eight frien
 
 Hisaab is a shared ledger for a group. Anyone in the group records what they paid and who it was for, split equally, by exact amounts, by percentages or by shares. Hisaab keeps an exact running balance for every member (in integer paise, so nothing is lost to rounding), and computes a **simplified settle-up plan**: the smallest practical set of payments that makes everyone even. When someone pays back, they record it and balances update immediately. Recurring costs like rent are added automatically every month.
 
+For trips, the same group gets a shared plan: destination, dates and budget; a day-by-day itinerary; an ideas list everyone votes on; a map of every stop plus famous places nearby; and a bookings vault where any booking becomes a split expense in one click. Paying back is one tap: the settle-up plan opens your UPI app with the exact amount.
+
 ## Key features (core workflows)
 
 1. **Groups and invites.** Create a group, share an invite link, members join with one click. Admin / member roles; admins manage members, reset the invite link and change settings.
-2. **Add an expense with any split.** Equal, exact amounts, percentages or shares, with a live preview of each person's share. Validation explains exactly what is wrong ("Percentages add up to 90%"). Double-clicks and retries never create duplicates.
-3. **Balances and settle up.** Each member's net balance, a simplified list of who pays whom (or direct debts only, if the admin turns simplification off), and one-click "Record payment" that is pre-filled with the right amount.
-4. **History.** Search, filter (category, person, date range) and paginate expenses; edit or delete with permission checks and conflict detection; a full activity log; CSV export.
-5. **Recurring expenses.** "Rent ₹30,000 every month on the 1st" is added automatically, including catching up on any occurrences that fell due while no scheduled run happened. Rules pause themselves if a person in them leaves the group.
+2. **Add an expense with any split.** Equal, exact amounts, percentages or shares, with a live preview of each person's share. Validation explains exactly what is wrong ("Percentages add up to 90%"). Double-clicks and retries never create duplicates. Search, filters, CSV export, edit-conflict detection and recurring expenses (rent, Wi-Fi) build on it.
+3. **Balances, settle up and pay by UPI.** Each member's net balance, a simplified list of who pays whom, and one-click "Record payment". If the person you owe has saved a UPI ID, **Pay via UPI** opens GPay / PhonePe / Paytm with the exact amount on a phone, or shows a QR code to scan on a laptop.
+4. **Plan the trip together.** Destination, dates and budget for the group. A day-by-day itinerary, an ideas list the group **votes** on before scheduling, and a **map** (OpenStreetMap) with numbered pins for the plan and the **famous places near the destination** (from Wikipedia, with photos), each addable in one tap. Every stop has a Google Maps directions link.
+5. **Bookings and budget.** Save flight / train / bus / stay / activity confirmations (PNR, times, cost, who paid) where the whole group can see them. **Add as expense** turns a booking into an equal split exactly once. "Find and book" links open Google Flights, Booking.com, IRCTC and redBus pre-filled with the trip's destination and dates. The budget tracker shows spent vs budget and a breakdown by category.
 
 ## Tech stack
 
 | Layer      | Choice                                                         | Why                                                                                              |
 | ---------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Frontend   | React 18, React Router 7, Vite 8                               | Component-based UI with client-side routing; Vite for fast builds                                |
+| Frontend   | React 18, React Router 7, Vite 8, Leaflet, qrcode              | Component-based UI; Leaflet renders the OpenStreetMap map; UPI QR codes generated in the browser |
 | Backend    | Node.js 22, Express 5                                          | Express 5 forwards async errors to one error handler                                             |
 | Database   | MongoDB (Atlas) with Mongoose                                  | Groups embed members; expenses embed their splits; aggregations compute balances in the database |
 | Auth       | JWT in an httpOnly, SameSite cookie; bcrypt                    | No token in JavaScript reach (XSS), cookie not sent cross-site (CSRF)                            |
@@ -52,6 +58,7 @@ Hisaab is a shared ledger for a group. Anyone in the group records what they pai
 | Security   | Helmet (CSP), express-rate-limit, CSRF header check            | Defence in depth                                                                                 |
 | Testing    | Node's built-in test runner, Supertest, mongodb-memory-server  | Real HTTP + real MongoDB in tests; GitHub Actions runs them on every push                        |
 | Hosting    | Vercel Services (Vite client + Express server) + MongoDB Atlas | One domain for UI and API: no CORS in production; the Express app runs as a serverless function  |
+| External   | OpenStreetMap (tiles + Nominatim search), Wikipedia API        | Free, no API keys or billing; called through the server with caching and throttling              |
 
 ## Architecture
 
@@ -64,12 +71,15 @@ flowchart LR
   subgraph Vercel project - one domain
     CL[client service<br/>Vite static build] -.serves.-> UI
     API[server service<br/>Express, index.js] --> MW[auth · CSRF · zod validation · group membership]
-    MW --> R[routes: auth, groups, invites,<br/>expenses, settlements, recurring]
-    R --> S[services: balances, recurring catch-up, activity]
+    MW --> R[routes: auth, groups, invites, expenses, settlements,<br/>recurring, plan, bookings, places]
+    R --> S[services: balances, recurring catch-up, activity, places]
     S -.uses.-> SH
   end
-  S --> DB[(MongoDB Atlas)]
+  S --> DB[(MongoDB Atlas<br/>incl. shared lookup cache)]
   R --> DB
+  S -->|search, throttled 1/s| OSM[OpenStreetMap Nominatim]
+  S -->|nearby attractions| WIKI[Wikipedia API]
+  UI -->|map tiles| TILES[tile.openstreetmap.org]
 ```
 
 **Request flow, e.g. "Add expense":**
@@ -88,16 +98,17 @@ hisaab/
 │   │   │   └── balances.js # net balances, pairwise debts, debt simplification
 │   │   ├── app.js          # Express app: security middleware, routes, static client (local)
 │   │   ├── server.js       # long-running mode (local): DB, scheduler, graceful shutdown
-│   │   ├── models/         # User, Group, Expense, Settlement, Activity, RecurringExpense
+│   │   ├── models/         # User, Group, Expense, Settlement, Activity, RecurringExpense,
+│   │   │                   # PlanItem, Booking, ExternalCache
 │   │   ├── routes/         # HTTP layer: validation + authorization + responses
-│   │   ├── services/       # balances (aggregations), recurring job, activity log
+│   │   ├── services/       # balances (aggregations), recurring job, activity log, places (cache + throttle)
 │   │   ├── middleware/     # auth, CSRF, validation, group membership, errors
 │   │   └── utils/          # errors, calendar dates
 │   └── tests/              # unit + API integration tests
 └── client/                 # "client" service (React + Vite)
     └── src/
         ├── pages/          # Auth, Dashboard, Group, Join
-        ├── components/     # ExpenseForm, SettleForm, group tabs, UI kit
+        ├── components/     # ExpenseForm, SettleForm, TripMap, PlaceSearch, UpiPay, group tabs, UI kit
         └── lib/            # API client, auth context, toasts, formatting
 ```
 
@@ -105,12 +116,15 @@ hisaab/
 
 | Collection          | Key fields                                                                                                                                    | Notes                                                                            |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `users`             | name, email (unique), passwordHash                                                                                                            | hash never returned                                                              |
-| `groups`            | name, members[{user, role, joinedAt}], inviteCode (unique), simplifyDebts                                                                     | members embedded: always read together                                           |
+| `users`             | name, email (unique), passwordHash, upiId                                                                                                     | hash never returned; UPI ID only shown to fellow group members                   |
+| `groups`            | name, members[{user, role, joinedAt}], inviteCode (unique), simplifyDebts, trip{destination, startDate, endDate, budget}                      | members and trip embedded: always read together                                  |
 | `expenses`          | group, amount (paise), paidBy, splitType, splits[{user, amount, value}], category, date, deletedAt, clientRequestId, recurring, occurrenceKey | soft delete; unique partial indexes for idempotency and recurring de-duplication |
 | `settlements`       | group, from, to, amount, date, deletedAt, clientRequestId                                                                                     | real-world payments                                                              |
 | `activities`        | group, actor, type, meta, createdAt                                                                                                           | append-only audit log                                                            |
 | `recurringexpenses` | group, amount, paidBy, participants, frequency, anchorDay, nextRunAt, active                                                                  | drives the scheduler                                                             |
+| `planitems`         | group, title, kind, day (null = idea), time, place{name, lat, lng, thumbnail, url}, notes, votes[user]                                        | votes updated atomically                                                         |
+| `bookings`          | group, type, title, provider, reference, start/end date+time, location, cost (paise), paidBy, expense                                         | `expense` set by a conditional claim, so one booking → at most one expense       |
+| `externalcaches`    | key (unique), value, expiresAt                                                                                                                | TTL index expires entries; shared by all serverless instances                    |
 
 ### Engineering decisions worth calling out
 
@@ -125,13 +139,18 @@ hisaab/
 - **Recurring expenses without depending on a timer.** Each occurrence has a unique `(recurring, occurrenceKey)` index and `nextRunAt` advances with compare-and-set, so the job can run concurrently or repeatedly and never double-charges. Serverless functions can't run background timers, so due occurrences are caught up whenever they matter: right after a rule is created, and whenever the group list or a group is opened (before any balance is computed). An external scheduler can also call the secured `/api/cron/recurring` endpoint, and locally an in-process scheduler runs every 10 minutes. Monthly rules anchored on the 31st land on the last day of shorter months.
 - **Serverless-friendly database access.** The MongoDB connection is opened lazily on the first request and reused by warm function instances; a failed connection is retried on the next request and reported as `503`, never a crash.
 - **Hash-based client routes** (`/#/groups/…`). Deep links, invite links and page refreshes work on any static host with no server-side fallback rule.
+- **Votes can't be lost or doubled.** Voting is a single `$addToSet` / `$pull` on the item, so simultaneous votes from the whole group all count and repeat clicks don't inflate the total (tested with concurrent requests).
+- **A booking becomes an expense exactly once.** The booking is claimed with a conditional update (`expense: null → newId`) before the expense is written; double-clicks get `409 ALREADY_EXPENSED`, a failed write releases the claim, and if that expense is later deleted the booking can be added again.
+- **Responsible use of free third-party services.** Place search and attractions go through the server, never straight from the browser: results are cached in MongoDB (shared across serverless instances, TTL-expired) with an in-memory layer in front, calls to Nominatim are serialised to at most one per second, every request identifies the app with a User-Agent and times out after 7 s, users are rate-limited, and provider failures come back as a clear `502` instead of a crash.
+- **Pay via UPI uses the standard `upi://pay` deep link** (payee, name, exact amount, note). Nothing is charged by Hisaab; after paying, the user records the payment so balances stay the source of truth.
+- **No fake booking.** Real booking needs partner APIs with payments; instead the app links out to booking sites with the trip's destination and dates pre-filled, and keeps the resulting confirmations.
 - **Calendar dates, not timestamps.** Expense dates are stored as UTC midnight of the chosen date and "today" is evaluated in IST, so an expense never jumps a day between time zones.
 
 ### Security
 
 - Passwords hashed with bcrypt (cost 12); login responses are identical for unknown email and wrong password, with a dummy hash to equalise timing.
 - JWT in an `httpOnly`, `SameSite=Lax`, `Secure` (in production) cookie; plus a required `X-Requested-With` header on every state-changing request.
-- Rate limiting on login/register; strict Content-Security-Policy: Helmet sets it (plus other security headers) on every API response, and the production build of the React page carries the same policy in a `<meta>` tag. Fonts are self-hosted, so the app makes no third-party requests.
+- Rate limiting on login/register; strict Content-Security-Policy: Helmet sets it (plus other security headers) on every API response, and the production build of the React page carries the same policy in a `<meta>` tag. Fonts are self-hosted; the only third-party content the page loads is OpenStreetMap map tiles and Wikimedia thumbnails, both allow-listed in the CSP.
 - Every route checks group membership; non-members get 404 so group ids can't be probed. Edits/deletes are limited to the creator, payer or an admin. Only admins see the invite code.
 - All input validated with Zod; search text is regex-escaped; CSV export neutralises spreadsheet formula injection.
 - Secrets only in environment variables; `.env` is git-ignored.
@@ -179,7 +198,7 @@ npm start            # set NODE_ENV=production in server/.env for secure cookies
 **Tests** (a throwaway in-memory MongoDB is downloaded and started automatically):
 
 ```bash
-npm test             # 36 unit + API integration tests
+npm test             # 45 unit + API integration tests
 npm run format:check # Prettier
 ```
 
@@ -229,7 +248,10 @@ Live URL: **https://YOUR-APP.vercel.app**
 - Single currency (INR).
 - No email notifications; activity feed is in-app only.
 - Debt simplification is greedy (≤ n − 1 payments), not the NP-hard true minimum.
-- Payments are recorded, not processed (no UPI integration).
+- UPI payments open the user's own UPI app; Hisaab doesn't verify that a payment went through, so the payer records it (a payment-gateway webhook would automate this).
+- Flights and hotels are booked on the providers' sites; Hisaab stores the confirmations rather than booking itself (that needs partner APIs and payments).
+- Place search and attractions use free public services (OpenStreetMap, Wikipedia) that ask for light usage; heavy traffic would need a paid geocoding plan.
+- Plan items are last-write-wins when two people edit the same item at once (expenses use conflict detection).
 - The rate limiter is in-memory, so on serverless each warm instance counts separately.
 
 ## Use of AI
