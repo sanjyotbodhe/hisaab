@@ -285,4 +285,4 @@ Built from scratch for this project; not based on an existing app or template. I
 
 ## Use of AI
 
-AI (Claude) was used extensively, for code generation, tests and documentation, as allowed by the project guidelines. Commits made with AI assistance carry a `Co-Authored-By` trailer.
+AI (Claude) was used as an engineering tool for code generation, testing, debugging and documentation, as the project guidelines allow. Every feature was tested end to end (53 automated tests plus browser walkthroughs) before it was committed.
