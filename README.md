@@ -2,8 +2,8 @@
 
 **One place for a group's shared money and trips: split expenses, plan the trip together, keep bookings, and settle up with the fewest payments (pay by UPI, or online through Razorpay with verified settlement).**
 
-Live app: **https://YOUR-APP.vercel.app**
-Demo video: **YOUR-VIDEO-LINK**
+Live app: **https://hisaab-eosin-five.vercel.app**
+Demo video: _link added at submission_
 Repository: https://github.com/sanjyotbodhe/hisaab
 
 ---
@@ -261,10 +261,10 @@ The browser calls the API on the same origin (`/api/...`), so there is no CORS a
 
 1. **MongoDB Atlas:** create a free M0 cluster → Database Access: add a database user → Network Access: allow `0.0.0.0/0` (Vercel functions have no fixed IPs) → Connect → Drivers: copy the connection string, insert the password and add the database name: `...mongodb.net/hisaab?retryWrites=true&w=majority`.
 2. **Vercel:** Add New → Project → import `sanjyotbodhe/hisaab`. Vercel reads the services from `vercel.json`. Add the environment variables `MONGODB_URI` and `JWT_SECRET` (optionally `CRON_SECRET` and the Razorpay variables), then Deploy.
-3. Check `https://YOUR-APP.vercel.app/api/health` returns `{"status":"ok","db":"up"}`.
-4. **Razorpay (optional):** in the Razorpay Dashboard (Test mode) → Account & Settings → API Keys, generate a key and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` in Vercel. For the webhook: Account & Settings → Webhooks → Add: URL `https://YOUR-APP.vercel.app/api/payments/webhook`, events `payment.captured` and `order.paid`, a secret of your choice, which also goes into `RAZORPAY_WEBHOOK_SECRET`. Redeploy after changing variables. In test mode, use Razorpay's test UPI ID `success@razorpay` or test cards; no real money moves.
+3. Check `https://hisaab-eosin-five.vercel.app/api/health` returns `{"status":"ok","db":"up"}`.
+4. **Razorpay (optional):** in the Razorpay Dashboard (Test mode) → Account & Settings → API Keys, generate a key and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` in Vercel. For the webhook: Account & Settings → Webhooks → Add: URL `https://hisaab-eosin-five.vercel.app/api/payments/webhook`, events `payment.captured` and `order.paid`, a secret of your choice, which also goes into `RAZORPAY_WEBHOOK_SECRET`. Redeploy after changing variables. In test mode, use Razorpay's test UPI ID `success@razorpay` or test cards; no real money moves.
 
-Live URL: **https://YOUR-APP.vercel.app**
+Live URL: **https://hisaab-eosin-five.vercel.app**
 
 ## Limitations and next steps
 
@@ -278,6 +278,10 @@ Live URL: **https://YOUR-APP.vercel.app**
 - Place search and attractions use free public services (OpenStreetMap, Wikipedia) that ask for light usage; heavy traffic would need a paid geocoding plan.
 - Plan items are last-write-wins when two people edit the same item at once (expenses use conflict detection).
 - The rate limiter is in-memory, so on serverless each warm instance counts separately.
+
+## Credits
+
+Built from scratch for this project; not based on an existing app or template. It uses open-source libraries (React, Express, Mongoose, Zod, Leaflet and others listed in the `package.json` files) and free data services: map tiles and place search © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, and nearby places and photos from [Wikipedia](https://www.wikipedia.org/) / Wikimedia Commons (attributed in the app).
 
 ## Use of AI
 
