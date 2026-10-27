@@ -3,7 +3,7 @@
 **One place for a group's shared money and trips: split expenses, plan the trip together, keep bookings, and settle up with the fewest payments (pay by UPI, or online through Razorpay with verified settlement).**
 
 Live app: **https://hisaab-eosin-five.vercel.app**
-Demo video: _link added at submission_
+Demo video: https://drive.google.com/file/d/1twXtK_6SaT8V3onmVryt3C4WeE8fPCup/view?usp=sharing
 Repository: https://github.com/sanjyotbodhe/hisaab
 
 ---
